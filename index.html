@@ -36,9 +36,9 @@
   .f-oswald{ font-family:"Oswald",var(--disp); } .f-anton{ font-family:"Anton",var(--disp); }
 
   #cursor,#cursorDot{ position:fixed; top:0; left:0; pointer-events:none; z-index:96; mix-blend-mode:difference; will-change:transform; }
-  #cursor{ width:28px; height:28px; margin:-14px 0 0 -14px; border:2px solid #fff; border-radius:50%; transition:width .18s ease,height .18s ease,margin .18s ease,background .18s ease,opacity .15s ease; }
-  #cursorDot{ width:7px; height:7px; margin:-3.5px 0 0 -3.5px; background:#fff; border-radius:50%; }
-  #cursor.hot{ width:58px; height:58px; margin:-29px 0 0 -29px; background:rgba(255,255,255,.14); }
+  #cursor{ width:38px; height:38px; margin:-19px 0 0 -19px; border:2px solid #fff; border-radius:50%; transition:width .18s ease,height .18s ease,margin .18s ease,background .18s ease,opacity .15s ease; }
+  #cursorDot{ width:8px; height:8px; margin:-4px 0 0 -4px; background:#fff; border-radius:50%; }
+  #cursor.hot{ width:70px; height:70px; margin:-35px 0 0 -35px; background:rgba(255,255,255,.14); }
   #cursor.hide,#cursorDot.hide{ opacity:0; }
   body.cursor-on, body.cursor-on *{ cursor:none !important; }
 
@@ -173,7 +173,8 @@
   @media (max-width:700px){ .loc-cols{ columns:2 !important; } .loc-cols.airy{ columns:1 !important; } }
 
   /* side-rail navigator — centered rail, clustering dots, traveling plane */
-  #pnav{ position:fixed; right:clamp(60px,6vw,100px); top:50%; transform:translateY(-50%); height:min(64vh,540px); width:180px; z-index:36; pointer-events:none; }
+  #pnav{ position:fixed; right:clamp(60px,6vw,100px); top:50%; transform:translateY(-50%); height:min(64vh,540px); width:180px; z-index:36; pointer-events:none; opacity:0; visibility:hidden; transition:opacity .4s ease, visibility .4s ease; }
+  #pnav.show{ opacity:1; visibility:visible; }
   .pnav-dot{ position:absolute; right:0; width:10px; height:10px; border-radius:50%; transform:translate(50%,-50%); opacity:.55; transition:top .55s cubic-bezier(.4,0,.2,1), width .2s ease, height .2s ease, opacity .3s ease, box-shadow .3s ease; pointer-events:auto; cursor:pointer; }
   .pnav-dot.on{ opacity:1; width:13px; height:13px; }
   .pnav-seg{ position:absolute; right:0; width:2px; border-radius:2px; transform:translateX(50%); display:none; transition:top .55s cubic-bezier(.4,0,.2,1), height .55s cubic-bezier(.4,0,.2,1), background .3s; }
@@ -281,9 +282,9 @@ const SITE = {
       kicker:"Issue 02 · The Grid · International Style", name:"Chicago", meta:"21 frames · 8-column city",
       blurb:"A city that shows off its engineering. Steel, the river, the L, and a skyline best shot from the bottom looking up.",
       blocks:[{ at:5, bg:"#c8102e", ink:"#ffffff", k:"STATE & MADISON", t:"the zero point" }, { at:15, bg:"#000000", ink:"#c8102e", k:"APPENDIX", t:"EXIF" }] },
-    { key:"japan", n:44, font:"f-mono", cols:3, airy:true, align:"center", extra:"dossier",
+    { key:"japan", n:42, font:"f-mono", cols:3, airy:true, align:"center", extra:"dossier",
       bg:"#f7f7f4", ink:"#1a1a1c", ldim:"#8a827c", acc:"#e34234",
-      kicker:"MA · Issue 03 · Negative Space · 23:52 JST", name:"Japan", meta:"44 frames · shot at night",
+      kicker:"MA · Issue 03 · Negative Space · 23:52 JST", name:"Japan", meta:"42 frames · shot at night",
       blurb:"Japan after dark. Kyoto towers, Osaka neon, vending-machine light, and streets that look best right after rain.",
       blocks:[{ at:8, bg:"#e34234", ink:"#ffffff", k:"23:52 · SHINJUKU", t:"the machine hums" }] },
     { key:"hawaii", n:20, font:"f-archivoblack", cols:2, airy:false, align:"right", extra:"",
@@ -296,9 +297,9 @@ const SITE = {
       kicker:"Issue 05 · Mileage · A California Road Issue", name:"California", meta:"MI 0000 to 0482 · shot from the passenger seat",
       blurb:"Shot mostly from a moving car. Coast highway, palm shadows, and the flat gold light the state runs on.",
       blocks:[{ at:3, bg:"#e8a33d", ink:"#201e1a", k:"MI 0142 · 17:38", t:"Coast → Valley" }, { at:12, bg:"#4a4a46", ink:"#faf5ea", k:"MI 0361 · 19:02", t:"Canyon → City" }] },
-    { key:"seoul", n:38, font:"f-anton", cols:2, airy:false, align:"left", extra:"",
+    { key:"seoul", n:37, font:"f-anton", cols:2, airy:false, align:"left", extra:"",
       bg:"#f0e9dc", ink:"#26221e", ldim:"#7a7264", acc:"#1b4b9c",
-      kicker:"Issue 06 · Ground Level", name:"Seoul", meta:"38 frames · street level",
+      kicker:"Issue 06 · Ground Level", name:"Seoul", meta:"37 frames · street level",
       blurb:"Seoul at street level. Brick and neon, palace walls, market alleys, and a city that does not really slow down.",
       blocks:[{ at:2, bg:"#1b4b9c", ink:"#ffffff", k:"서울 · SEOUL", t:"street level" }, { at:3, bg:"#e86a33", ink:"#26221e", k:"22:40", t:"after dark" }] }
   ],
@@ -436,7 +437,7 @@ const SITE = {
   function buildPhoto(box) {
     const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf("photo"))); l.appendChild(el("span", "", "( photography · six issues, six places )")); box.appendChild(l);
     const ptitle = el("h2", "exp-title photo-title f-inter"); const ptin = el("span", "exp-in", "Photography"); ptitle.appendChild(ptin); box.appendChild(ptitle); fitSoon(ptin);
-    stopPhotoFont(); (function () { let fi = 0; photoFontTimer = setInterval(function () { fi = (fi + 1) % PFONTS.length; ptitle.className = "exp-title photo-title " + PFONTS[fi]; fitWide(ptin); }, 100); })();
+    stopPhotoFont(); (function () { let fi = 0, hover = false; ptitle.addEventListener("mouseenter", function () { hover = true; }); ptitle.addEventListener("mouseleave", function () { hover = false; }); photoFontTimer = setInterval(function () { if (hover) return; fi = (fi + 1) % PFONTS.length; ptitle.className = "exp-title photo-title " + PFONTS[fi]; fitWide(ptin); }, 200); })();
     const wrap = el("div", "locwrap");
     const secEls = [];
     SITE.locations.forEach((L, li) => {
@@ -456,7 +457,7 @@ const SITE = {
       for (let i = 0; i < photos.length; i++) {
         while (blocks.length && blocks[0].at === i) pushBlock(blocks.shift());
         const it = el("div", "loc-item");
-        const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; cell.appendChild(img);
+        const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; (function (item) { img.addEventListener("error", function () { if (item.parentNode) item.parentNode.removeChild(item); }); })(it); cell.appendChild(img);
         cell.setAttribute("role", "button"); cell.setAttribute("aria-label", "Open " + photos[i].label);
         (function (idx) { cell.addEventListener("click", () => lbOpen(photos, idx)); })(i);
         it.appendChild(cell); cols.appendChild(it);
@@ -470,7 +471,7 @@ const SITE = {
     /* side-rail navigator */
     const nav = el("div"); nav.id = "pnav";
     const seg = el("div", "pnav-seg"); nav.appendChild(seg);
-    const plane = el("div", "pnav-plane"); plane.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="3.4" stroke-linejoin="round" paint-order="stroke"><path d="M12 21 L4 5 L12 9 L20 5 Z"/></svg>'; nav.appendChild(plane);
+    const plane = el("div", "pnav-plane"); plane.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" paint-order="stroke"><path d="M12 21 L4 5 L12 9 L20 5 Z"/></svg>'; nav.appendChild(plane);
     const dots = [], accs = SITE.locations.map(x => x.acc), names = SITE.locations.map(x => x.name);
     SITE.locations.forEach((L, i) => {
       const d = el("button", "pnav-dot"); d.style.background = L.acc; d.setAttribute("aria-label", L.name);
@@ -502,6 +503,7 @@ const SITE = {
   }
   function updatePnav() {
     if (current !== "photo" || !pnav) return;
+    pnav.nav.classList.toggle("show", pnav.secEls[0].getBoundingClientRect().top <= 120);
     const sy = window.scrollY || 0;
     if (Math.abs(sy - lastSY) > 2) { const nd = sy > lastSY ? "down" : "up"; if (nd !== planeDir) { planeDir = nd; if (pnav.planeSvg) pnav.planeSvg.style.transform = nd === "up" ? "rotate(180deg)" : "rotate(0deg)"; } lastSY = sy; }
     const vh = window.innerHeight || 800, thr = vh * 0.4;
