@@ -99,9 +99,9 @@
   .exp-title{ display:block; width:100%; overflow:hidden; margin:0 0 clamp(22px,3.4vh,44px); line-height:.8; text-transform:uppercase; font-weight:800; color:var(--ink); }
   .exp-in{ position:relative; display:inline-block; transform-origin:left center; white-space:nowrap; will-change:transform; }
   .exp-base{ position:relative; z-index:0; }
-  .work-exp .exp-glare{ position:absolute; inset:0; z-index:1; pointer-events:none; background-image:repeating-linear-gradient(118deg,#61bb46 0 34px,#f9c22e 34px 68px,#f5821f 68px 102px,#e03a3e 102px 136px,#963d97 136px 170px,#009ddc 170px 204px); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; clip-path:inset(0 0 0 100%); animation:glareFill 4.6s cubic-bezier(.55,0,.45,1) infinite; }
-  @keyframes glareFill{ 0%{ clip-path:inset(0 0 0 100%); } 42%{ clip-path:inset(0 0 0 0); } 58%{ clip-path:inset(0 0 0 0); } 100%{ clip-path:inset(0 100% 0 0); } }
-  @media (prefers-reduced-motion:reduce){ .work-exp .exp-glare{ animation:none; clip-path:inset(0 0 0 0); } }
+  .work-exp .exp-glare{ position:absolute; inset:0; z-index:1; pointer-events:none; background-image:repeating-linear-gradient(118deg,#61bb46 0 34px,#f9c22e 34px 68px,#f5821f 68px 102px,#e03a3e 102px 136px,#963d97 136px 170px,#009ddc 170px 204px); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; -webkit-mask-image:linear-gradient(118deg, transparent 0 25%, #000 25% 75%, transparent 75% 100%); mask-image:linear-gradient(118deg, transparent 0 25%, #000 25% 75%, transparent 75% 100%); -webkit-mask-size:400% 100%; mask-size:400% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position-x:0%; mask-position-x:0%; animation:glareSlant 4.6s cubic-bezier(.55,0,.45,1) infinite; }
+  @keyframes glareSlant{ 0%{ -webkit-mask-position-x:0%; mask-position-x:0%; } 42%{ -webkit-mask-position-x:45%; mask-position-x:45%; } 58%{ -webkit-mask-position-x:55%; mask-position-x:55%; } 100%{ -webkit-mask-position-x:100%; mask-position-x:100%; } }
+  @media (prefers-reduced-motion:reduce){ .work-exp .exp-glare{ animation:none; -webkit-mask-position-x:50%; mask-position-x:50%; } }
   .exp-title.f-garamond{ font-weight:500; } .exp-title.f-archivoblack{ font-weight:400; } .exp-title.f-mono{ font-weight:700; }
   .work-exp{ font-size:clamp(3rem,15.5vw,12.5rem); }
   .photo-title{ font-size:clamp(3rem,15vw,12rem); border-bottom:3px solid currentColor; padding-bottom:clamp(6px,1.2vh,16px); margin-bottom:clamp(30px,5vh,64px); }
