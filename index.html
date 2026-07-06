@@ -133,6 +133,7 @@
   /* PHOTOGRAPHY — one magazine per place */
   .locwrap{ width:100vw; margin-left:calc(50% - 50vw); }
   .loc{ position:relative; background:var(--lbg); color:var(--link); padding:clamp(64px,11vh,140px) var(--pad); }
+  @media (min-width:821px){ .loc{ padding-right:clamp(150px,13vw,230px); } }
   .loc.x-grid{ background-image:repeating-linear-gradient(90deg, rgba(200,16,46,.10) 0 1px, transparent 1px calc(100%/8)); }
   .loc.x-dossier::before, .loc.x-dossier::after{ content:""; position:absolute; width:18px; height:18px; }
   .loc.x-dossier::before{ top:22px; left:22px; border-top:1.5px solid var(--lacc); border-left:1.5px solid var(--lacc); }
@@ -161,12 +162,13 @@
   .loc-block .bl-k{ display:block; font:600 10px/1.4 var(--mono); letter-spacing:.2em; opacity:.85; margin-bottom:8px; }
   @media (max-width:700px){ .loc-cols{ columns:2 !important; } .loc-cols.airy{ columns:1 !important; } }
 
-  /* side-rail navigator */
-  #pnav{ position:fixed; right:20px; top:50%; transform:translateY(-50%); height:min(62vh,520px); width:160px; z-index:36; pointer-events:none; }
-  .pnav-dot{ position:absolute; right:6px; width:11px; height:11px; margin:-5.5px -5.5px 0 0; border-radius:50%; opacity:.6; box-shadow:0 0 0 3px rgba(255,255,255,.35); transition:opacity .3s, width .2s, height .2s, box-shadow .3s, margin .2s; pointer-events:auto; cursor:pointer; }
-  .pnav-dot.on{ opacity:1; width:16px; height:16px; margin:-8px -8px 0 0; }
-  .pnav-seg{ position:absolute; right:9.5px; width:2px; border-radius:2px; display:none; transition:top .5s cubic-bezier(.4,0,.2,1), height .5s cubic-bezier(.4,0,.2,1), background .3s; }
-  .pnav-label{ position:absolute; right:26px; transform:translateY(-50%); font:600 10px/1.3 var(--mono); letter-spacing:.24em; text-transform:uppercase; white-space:nowrap; text-align:right; transition:top .5s cubic-bezier(.4,0,.2,1), color .3s; }
+  /* side-rail navigator — centered rail, clustering dots, traveling marker */
+  #pnav{ position:fixed; right:30px; top:50%; transform:translateY(-50%); height:min(64vh,540px); width:220px; z-index:36; pointer-events:none; }
+  .pnav-dot{ position:absolute; right:0; width:10px; height:10px; border-radius:50%; transform:translate(50%,-50%); opacity:.55; transition:top .55s cubic-bezier(.4,0,.2,1), width .2s ease, height .2s ease, opacity .3s ease, box-shadow .3s ease; pointer-events:auto; cursor:pointer; }
+  .pnav-dot.on{ opacity:1; width:13px; height:13px; }
+  .pnav-seg{ position:absolute; right:0; width:2px; border-radius:2px; transform:translateX(50%); display:none; transition:top .55s cubic-bezier(.4,0,.2,1), height .55s cubic-bezier(.4,0,.2,1), background .3s; }
+  .pnav-plane{ position:absolute; right:0; width:13px; height:13px; border-radius:50%; border:2px solid #fff; transform:translate(50%,-50%); display:none; z-index:2; }
+  .pnav-label{ position:absolute; right:24px; transform:translateY(-50%); font:800 clamp(11px,.95vw,15px)/1 var(--disp); letter-spacing:.02em; text-transform:uppercase; white-space:nowrap; text-align:right; transition:top .3s ease, color .3s; }
   @media (max-width:820px){ #pnav{ display:none; } }
 
   .mani p{ font-weight:700; letter-spacing:-.02em; font-size:clamp(1.7rem,4.5vw,3.6rem); line-height:1.16; max-width:28ch; }
@@ -435,34 +437,45 @@ const SITE = {
     box.appendChild(wrap);
 
     /* side-rail navigator */
-    const N = SITE.locations.length;
     const nav = el("div"); nav.id = "pnav";
     const seg = el("div", "pnav-seg"); nav.appendChild(seg);
-    const dots = [], pcts = [], accs = SITE.locations.map(x => x.acc), names = SITE.locations.map(x => x.name);
+    const plane = el("div", "pnav-plane"); nav.appendChild(plane);
+    const dots = [], accs = SITE.locations.map(x => x.acc), names = SITE.locations.map(x => x.name);
     SITE.locations.forEach((L, i) => {
-      const pct = N === 1 ? 50 : (i / (N - 1)) * 100; pcts.push(pct);
-      const d = el("button", "pnav-dot"); d.style.top = pct + "%"; d.style.background = L.acc; d.setAttribute("aria-label", L.name);
+      const d = el("button", "pnav-dot"); d.style.background = L.acc; d.setAttribute("aria-label", L.name);
       (function (idx) { d.addEventListener("click", () => { const top = secEls[idx].getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: top, behavior: "smooth" }); }); })(i);
       nav.appendChild(d); dots.push(d);
     });
     const label = el("div", "pnav-label"); nav.appendChild(label);
     doc.body.appendChild(nav);
-    pnav = { nav: nav, secEls: secEls, seg: seg, dots: dots, label: label, pcts: pcts, accs: accs, names: names, active: -1 };
-    applyPnav(0);
+    pnav = { nav: nav, secEls: secEls, seg: seg, plane: plane, dots: dots, label: label, accs: accs, names: names, active: -1 };
+    applyPnav(0, 0);
   }
-  function applyPnav(i) {
+  function pnavGeom() { const H = (pnav && pnav.nav.clientHeight) || 480; const center = H / 2; const lineLen = clamp(H * 0.30, 120, 200); return { center: center, lineLen: lineLen, yTop: center - lineLen / 2, yBot: center + lineLen / 2 }; }
+  function applyPnav(active, progress) {
     if (!pnav) return;
-    pnav.dots.forEach((d, j) => { const on = j === i; d.classList.toggle("on", on); d.style.boxShadow = on ? "0 0 14px 3px " + pnav.accs[j] : "none"; });
-    pnav.label.textContent = pnav.names[i]; pnav.label.style.top = pnav.pcts[i] + "%"; pnav.label.style.color = pnav.accs[i];
-    const seg = pnav.seg;
-    if (i < pnav.dots.length - 1) { seg.style.display = "block"; seg.style.top = pnav.pcts[i] + "%"; seg.style.height = (pnav.pcts[i + 1] - pnav.pcts[i]) + "%"; seg.style.background = "linear-gradient(180deg," + pnav.accs[i] + "," + pnav.accs[i + 1] + ")"; }
-    else seg.style.display = "none";
+    const N = pnav.dots.length, last = N - 1, hasNext = active < last, g = pnavGeom(), gap = 13, dGap = 16;
+    if (hasNext) {
+      for (let k = 0; k <= active; k++) pnav.dots[active - k].style.top = (g.yTop - gap - k * dGap) + "px";
+      for (let k = 0; k <= last - (active + 1); k++) pnav.dots[active + 1 + k].style.top = (g.yBot + gap + k * dGap) + "px";
+    } else {
+      for (let i = 0; i < N; i++) pnav.dots[i].style.top = (g.center - (N - 1) * dGap / 2 + i * dGap) + "px";
+    }
+    pnav.dots.forEach((d, j) => { const on = j === active; d.classList.toggle("on", on); d.style.background = pnav.accs[j]; d.style.boxShadow = on ? "0 0 0 4px rgba(255,255,255,.45), 0 0 14px 3px " + pnav.accs[j] : "0 0 0 3px rgba(255,255,255,.4)"; });
+    if (hasNext) { pnav.seg.style.display = "block"; pnav.seg.style.top = g.yTop + "px"; pnav.seg.style.height = g.lineLen + "px"; pnav.seg.style.background = "linear-gradient(180deg," + pnav.accs[active] + "," + pnav.accs[active + 1] + ")"; }
+    else pnav.seg.style.display = "none";
+    if (hasNext) { pnav.plane.style.display = "block"; pnav.plane.style.background = pnav.accs[active]; pnav.plane.style.boxShadow = "0 0 0 3px rgba(255,255,255,.55), 0 0 16px 5px " + pnav.accs[active]; pnav.plane.style.top = (g.yTop + clamp(progress, 0, 1) * g.lineLen) + "px"; }
+    else pnav.plane.style.display = "none";
+    pnav.label.textContent = pnav.names[active]; pnav.label.style.color = pnav.accs[active]; pnav.label.style.top = (hasNext ? (g.yTop - gap) : g.center) + "px";
   }
   function updatePnav() {
     if (current !== "photo" || !pnav) return;
-    const vh = window.innerHeight || 800; let a = 0;
-    for (let i = 0; i < pnav.secEls.length; i++) { if (pnav.secEls[i].getBoundingClientRect().top <= vh * 0.4) a = i; }
-    if (a !== pnav.active) { pnav.active = a; applyPnav(a); }
+    const vh = window.innerHeight || 800, thr = vh * 0.4;
+    let a = 0; for (let i = 0; i < pnav.secEls.length; i++) { if (pnav.secEls[i].getBoundingClientRect().top <= thr) a = i; }
+    const act = pnav.secEls[a].getBoundingClientRect();
+    const prog = clamp((thr - act.top) / (act.height || 1), 0, 1);
+    if (a !== pnav.active) { pnav.active = a; applyPnav(a, prog); }
+    else if (a < pnav.dots.length - 1) { const g = pnavGeom(); pnav.plane.style.top = (g.yTop + prog * g.lineLen) + "px"; }
   }
 
   function buildAbout(box) { box.appendChild(head("about", false)); const mani = el("div", "mani"); SITE.about.forEach(m => mani.appendChild(el("p", m.acc ? "acc" : "", m.t))); box.appendChild(mani); const cols = el("div", "cols"); const c1 = el("div"), c2 = el("div"); c1.appendChild(el("h4", "", SITE.rolesH)); const u1 = el("ul"); SITE.roles.forEach(r => u1.appendChild(el("li", "", r))); c1.appendChild(u1); c2.appendChild(el("h4", "", SITE.skillsH)); const u2 = el("ul"); SITE.skills.forEach(s => u2.appendChild(el("li", "", s))); c2.appendChild(u2); cols.appendChild(c1); cols.appendChild(c2); box.appendChild(cols); }
