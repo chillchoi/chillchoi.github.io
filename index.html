@@ -10,7 +10,7 @@
 <title>Justin Joonseo Choi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;800&family=EB+Garamond:ital,wght@0,500;1,500&family=Archivo+Expanded:wght@700;800&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;800&family=EB+Garamond:ital,wght@0,500;1,500&family=Archivo+Expanded:wght@700;800&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Oswald:wght@500;700&family=Anton&display=swap">
 <style>
   :root{
     --bg:#f3f0e9; --card:#ebe7dd; --ink:#141412; --dim:#75726b;
@@ -33,6 +33,7 @@
   .f-inter{ font-family:var(--disp); } .f-garamond{ font-family:"EB Garamond",Georgia,serif; }
   .f-archivo-wide{ font-family:"Archivo Expanded",var(--disp); } .f-archivoblack{ font-family:"Archivo Black",var(--disp); }
   .f-mono{ font-family:"JetBrains Mono",var(--mono); }
+  .f-oswald{ font-family:"Oswald",var(--disp); } .f-anton{ font-family:"Anton",var(--disp); }
 
   #cursor,#cursorDot{ position:fixed; top:0; left:0; pointer-events:none; z-index:96; mix-blend-mode:difference; will-change:transform; }
   #cursor{ width:28px; height:28px; margin:-14px 0 0 -14px; border:2px solid #fff; border-radius:50%; transition:width .18s ease,height .18s ease,margin .18s ease,background .18s ease,opacity .15s ease; }
@@ -153,6 +154,9 @@
   .f-archivo-wide .loc-name{ font-weight:800; letter-spacing:-.005em; }
   .f-archivoblack .loc-name{ font-weight:400; text-transform:lowercase; letter-spacing:-.01em; }
   .f-mono .loc-name{ font-weight:700; text-transform:uppercase; font-size:clamp(2rem,6vw,4.6rem); letter-spacing:.14em; line-height:1; }
+  .f-oswald .loc-name{ font-weight:700; text-transform:uppercase; letter-spacing:.02em; font-size:clamp(3rem,11vw,9rem); }
+  .f-oswald .loc-blurb{ font-family:"Oswald",var(--disp); font-weight:300; }
+  .f-anton .loc-name{ font-weight:400; text-transform:uppercase; letter-spacing:-.005em; font-size:clamp(3rem,11.5vw,9rem); }
   .loc-blurb{ margin-top:clamp(16px,2.2vh,24px); font-family:var(--disp); font-size:clamp(1.05rem,1.7vw,1.4rem); line-height:1.5; opacity:.92; }
   .f-garamond .loc-blurb{ font-family:"EB Garamond",serif; font-size:clamp(1.15rem,1.9vw,1.55rem); }
   .f-mono .loc-blurb{ font-family:"JetBrains Mono",var(--mono); font-size:clamp(.95rem,1.4vw,1.15rem); }
@@ -272,7 +276,7 @@ const SITE = {
       kicker:"Issue 01 · Low Tide · An Almanac", name:"Cape Cod", meta:"17 frames · first light 05:14",
       blurb:"The Atlantic in the off-season. Grey water, empty dunes, lighthouses, and a lot of sky doing nothing in particular.",
       blocks:[{ at:6, bg:"#d9a48f", ink:"#2b2e33", k:"06:14 · ebb", t:"the fog left first" }] },
-    { key:"chicago", n:21, font:"f-inter", cols:3, airy:false, align:"left", extra:"grid",
+    { key:"chicago", n:21, font:"f-oswald", cols:3, airy:false, align:"left", extra:"grid",
       bg:"#ffffff", ink:"#000000", ldim:"#666666", acc:"#c8102e",
       kicker:"Issue 02 · The Grid · International Style", name:"Chicago", meta:"21 frames · 8-column city",
       blurb:"A city that shows off its engineering. Steel, the river, the L, and a skyline best shot from the bottom looking up.",
@@ -292,7 +296,7 @@ const SITE = {
       kicker:"Issue 05 · Mileage · A California Road Issue", name:"California", meta:"MI 0000 to 0482 · shot from the passenger seat",
       blurb:"Shot mostly from a moving car. Coast highway, palm shadows, and the flat gold light the state runs on.",
       blocks:[{ at:3, bg:"#e8a33d", ink:"#201e1a", k:"MI 0142 · 17:38", t:"Coast → Valley" }, { at:12, bg:"#4a4a46", ink:"#faf5ea", k:"MI 0361 · 19:02", t:"Canyon → City" }] },
-    { key:"seoul", n:38, font:"f-inter", cols:2, airy:false, align:"left", extra:"",
+    { key:"seoul", n:38, font:"f-anton", cols:2, airy:false, align:"left", extra:"",
       bg:"#f0e9dc", ink:"#26221e", ldim:"#7a7264", acc:"#1b4b9c",
       kicker:"Issue 06 · Ground Level", name:"Seoul", meta:"38 frames · street level",
       blurb:"Seoul at street level. Brick and neon, palace walls, market alleys, and a city that does not really slow down.",
@@ -400,7 +404,7 @@ const SITE = {
   const numOf = id => { const i = SITE.panels.findIndex(p => p.id === id); return i < 0 ? "" : pad2(i); };
   function head(id, withTitle) { const t = meta(id); const frag = el("div"); const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf(id))); l.appendChild(el("span", "", "( " + id + " )")); frag.appendChild(l); if (withTitle) frag.appendChild(el("h2", "vtitle", String(t.title).toUpperCase())); return frag; }
 
-  const PFONTS = ["f-inter", "f-garamond", "f-archivo-wide", "f-archivoblack", "f-mono"];
+  const PFONTS = ["f-inter", "f-garamond", "f-oswald", "f-archivo-wide", "f-archivoblack", "f-mono", "f-anton"];
   let photoFontTimer = null;
   function stopPhotoFont() { if (photoFontTimer) { clearInterval(photoFontTimer); photoFontTimer = null; } }
   function fitWide(span) { if (!span || !span.parentNode) return; span.style.transform = "scaleX(1)"; const cw = span.parentNode.clientWidth, tw = span.getBoundingClientRect().width; if (cw <= 0 || tw <= 0) return; span.style.transform = "scaleX(" + (cw / tw) + ")"; }
@@ -466,7 +470,7 @@ const SITE = {
     /* side-rail navigator */
     const nav = el("div"); nav.id = "pnav";
     const seg = el("div", "pnav-seg"); nav.appendChild(seg);
-    const plane = el("div", "pnav-plane"); plane.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"><path d="M12 21 L4 5 L12 9 L20 5 Z"/></svg>'; nav.appendChild(plane);
+    const plane = el("div", "pnav-plane"); plane.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="3.4" stroke-linejoin="round" paint-order="stroke"><path d="M12 21 L4 5 L12 9 L20 5 Z"/></svg>'; nav.appendChild(plane);
     const dots = [], accs = SITE.locations.map(x => x.acc), names = SITE.locations.map(x => x.name);
     SITE.locations.forEach((L, i) => {
       const d = el("button", "pnav-dot"); d.style.background = L.acc; d.setAttribute("aria-label", L.name);
