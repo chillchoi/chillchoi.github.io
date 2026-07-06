@@ -102,6 +102,7 @@
   .wcard:hover{ transform:translateY(-4px); box-shadow:10px 12px 0 rgba(20,20,18,.14); }
   .wcard-img{ aspect-ratio:16/10; border-bottom:1px solid var(--ink); overflow:hidden; background:var(--card); }
   .wcard-img img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.2,1); }
+  .wcard-ph{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:var(--card); color:rgba(20,20,18,.16); font:800 clamp(2rem,4.5vw,3.6rem)/1 var(--disp); letter-spacing:-.02em; }
   .wcard:hover .wcard-img img{ transform:scale(1.045); }
   .wcard-body{ padding:clamp(18px,1.8vw,26px); display:flex; flex-direction:column; gap:12px; }
   .wc-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
@@ -167,8 +168,8 @@
   .pnav-dot{ position:absolute; right:0; width:10px; height:10px; border-radius:50%; transform:translate(50%,-50%); opacity:.55; transition:top .55s cubic-bezier(.4,0,.2,1), width .2s ease, height .2s ease, opacity .3s ease, box-shadow .3s ease; pointer-events:auto; cursor:pointer; }
   .pnav-dot.on{ opacity:1; width:13px; height:13px; }
   .pnav-seg{ position:absolute; right:0; width:2px; border-radius:2px; transform:translateX(50%); display:none; transition:top .55s cubic-bezier(.4,0,.2,1), height .55s cubic-bezier(.4,0,.2,1), background .3s; }
-  .pnav-plane{ position:absolute; right:0; width:18px; height:18px; transform:translate(50%,-50%); display:none; z-index:3; }
-  .pnav-plane svg{ width:100%; height:100%; display:block; filter:drop-shadow(0 0 5px currentColor); }
+  .pnav-plane{ position:absolute; right:0; width:20px; height:20px; transform:translate(50%,-50%); display:none; z-index:3; }
+  .pnav-plane svg{ width:100%; height:100%; display:block; transition:transform .25s ease; filter:drop-shadow(0 0 4px rgba(255,255,255,.9)) drop-shadow(0 0 9px currentColor); }
   .pnav-label{ position:absolute; right:24px; transform:translateY(-50%); font:800 clamp(11px,.95vw,15px)/1 var(--disp); letter-spacing:.02em; text-transform:uppercase; white-space:nowrap; text-align:right; transition:top .3s ease, color .3s; }
   @media (max-width:820px){ #pnav{ display:none; } }
 
@@ -246,14 +247,18 @@ const SITE = {
     { id: "contact",title: "Contact",     bg: "photos/p-contact.jpg" }
   ],
 
-  workIntro: "I take something invisible, messy, or half-formed and turn it into something a person can actually see, touch, and use. A few of those, kept high level. Click any one for the full story.",
+  workIntro: "The short version of my resume. Consulting, product, and data work across healthcare, AI, law, and the public sector, plus two years in the Air Force. Click any one to read what I actually did.",
   work: [
-    { title: "Exhibition Kiosk", year: "2026", img: "photos/w-1.jpg", role: "Product & Build · early-stage tech startup", date: "2026", category: "Product · Interactive", tags: ["React", "Next.js", "AWS", "Web Audio", "i18n", "UX"], desc: "I built and shipped a live touch-and-voice kiosk for a public exhibition. A 3D map, a voice host, and a quiz.", long: ["I owned an interactive kiosk from end to end for a public exhibition. It is a portrait touchscreen that greets people, walks them through a 3D map, hosts them by voice, and runs a quiz that ends in a little celebration, in two languages.", "The real work was making it survive a live floor. I chased down a rendering glitch that came from a half-resolution canvas, killed the lag in the celebration animation that was quietly leaking memory, pushed the audio past the browser's volume ceiling with the Web Audio API, and wrapped the speech recognition in guard logic so crowd noise could not set it off. It shipped, it ran on the cloud, and it held up in front of real people. That last five percent is the whole job."] },
-    { title: "Commercialization Roadmap", year: "2025", img: "photos/w-2.jpg", role: "Strategy & analytics consulting", date: "2025", category: "Strategy · Life Sciences", tags: ["Market Sizing", "Positioning", "GTM", "Pilot Design"], desc: "I mapped how a healthcare technology actually gets from the lab into a clinic.", long: ["I worked the hard commercial question a company had, which was how a promising healthcare technology actually reaches the clinicians and patients who need it. I sized the opportunity across segments, tightened the positioning, and laid out a path from first pilots to signed contracts.", "What I handed over was not a clever slide. It was a direction the team could act on the next morning, with the risky assumptions named out loud and the first few moves obvious."] },
-    { title: "Outcome Forecasting", year: "2025", img: "photos/w-3.jpg", role: "Data & analytics", date: "2025", category: "Data · Analytics", tags: ["Python", "Pandas", "Forecasting", "Modeling"], desc: "I turned thousands of messy records into forecasts people could plan around.", long: ["I took a pile of inconsistent records and built a model that predicted success rates and timelines the team could plan around instead of guess at.", "The value was less about the math and more about trust. Once the forecast held up against what actually happened, planning stopped being a guess and started being a decision."] },
-    { title: "Segmentation & Experiments", year: "2024", img: "photos/w-4.jpg", role: "Data segmentation · large nonprofit", date: "2024", category: "Data · Growth", tags: ["SQL", "Segmentation", "A/B Testing", "Analytics"], desc: "I split a big audience into real segments and ran experiments against real outcomes.", long: ["I broke a large, undifferentiated audience into segments that actually behaved differently, then ran experiments against real outcomes instead of vanity numbers.", "Outreach went from one-size-fits-all to something that compounded, because for the first time we knew who we were talking to and what moved them."] },
-    { title: "Partnership Vision", year: "2026", img: "photos/w-5.jpg", role: "Business development · early-stage tech startup", date: "2026", category: "Business Development", tags: ["Strategy", "Partnerships", "Deck", "Financial Model"], desc: "I turned a fuzzy partnership idea into a concrete plan people could actually say yes to.", long: ["I structured a partnership proposal and a business vision for a new product direction. The story, the model, and an honest case for why it was worth doing.", "It took an idea that lived in a couple of heads and turned it into something a partner and a leadership team could actually commit to."] },
-    { title: "Generative Web Worlds", year: "ongoing", img: "photos/w-6.jpg", role: "Independent · maker", date: "2024 to now", category: "Creative · Front-end", tags: ["Three.js", "Canvas", "WebGL", "Design"], desc: "On my own time I build small interactive web worlds, like the one you are in right now.", long: ["In my own time I build small interactive web worlds and generative visual pieces. Disc machines, particle fields, flow fields, and the site you are reading right now.", "They are where I test the instinct that runs through all of my work, which is to take something invisible and make it into something you can touch."] }
+    { title: "Klleon", year: "2026", img: "photos/work/klleon.jpg", role: "Summer Product Management Intern · Series-A AI startup", date: "Jun 2026 to Aug 2026", category: "Product · AI", tags: ["Product", "UX", "LLM", "Roadmap", "Pharma", "Figma"], desc: "Product management at a Series-A startup building digital humans. I audited deployments and mapped how the product goes to market.", long: ["I audited nine enterprise digital-human deployments and surfaced more than twenty improvements across UX, LLM behavior, compliance, and scalability.", "Then I zoomed out and built a seven-track commercialization roadmap across finance, healthcare, legal, HR, events, retail, and public transit, plus a six-stage pharma pilot-to-contract motion with real compliance and time-to-productivity targets."] },
+    { title: "Parkinson's Foundation", year: "2026", img: "", role: "Contract Consultant", date: "Jan 2026 to May 2026", category: "Consulting · Nonprofit", tags: ["Segmentation", "K-means", "A/B Testing", "Research"], desc: "Turned fundraising-technology research into a rollout plan and segmented a national nonprofit's constituents.", long: ["I ran eleven expert interviews across seven nonprofits and translated how their fundraising technology actually works into a clear three-phase rollout.", "On the data side I designed a K-means segmentation of 1.6 million constituents across three mission areas, and tied A/B tests directly to retention and conversion so outreach could get smarter over time."] },
+    { title: "Varian Medical Systems", year: "2025", img: "", role: "Contract Consultant · Siemens Healthineers", date: "Sep 2025 to Dec 2025", category: "Data · Life Sciences", tags: ["Python", "Oncology", "Forecasting"], desc: "Analyzed thousands of oncology trials in Python to forecast success rates and FDA timelines.", long: ["I analyzed 4,615 oncology trials in Python to calculate phase success rates and forecast the path of active theranostics trials.", "I modeled likely FDA timelines from phase durations and gap assumptions, then validated the projections against eighteen already-completed trials so the forecast could be trusted."] },
+    { title: "Kim & Chang", year: "2025", img: "", role: "Undergraduate Clerkship Intern", date: "Jul 2025 to Aug 2025", category: "Legal · Cross-border", tags: ["Compliance", "Legal Research", "Diligence"], desc: "A clerkship at Korea's largest law firm. I audited cross-border contracts for risk and presented the findings.", long: ["I audited more than two hundred cross-border contracts for risk and compliance gaps and presented the key findings to a room of fifty-plus legal professionals.", "I also worked across three hundred bilingual legal documents to keep the cross-border teams moving in sync."] },
+    { title: "Boston Consulting Group", year: "2023", img: "", role: "Summer Research Analyst", date: "Jun 2023 to Aug 2023", category: "Strategy · Research", tags: ["Market Research", "Strategy", "Interviews"], desc: "Research analyst at BCG mapping battery-recycling markets and precursor materials.", long: ["I researched over a hundred battery-precursor studies and materials across three regions, which helped the client make calls faster.", "I mapped the battery-recycling markets across those regions using thirty-plus interview notes and a similar number of partnership analyses."] },
+    { title: "Phoenix Consulting Group", year: "2023", img: "", role: "President · UC Berkeley", date: "Feb 2023 to Present", category: "Leadership · Consulting", tags: ["Leadership", "Healthcare", "Recruiting", "PM"], desc: "President of a UC Berkeley healthcare consulting group. I run the projects, the training, and the pipeline.", long: ["I direct four healthcare projects across thirty-plus analysts and secured twenty thousand dollars in sponsorships by building out our PM training and client pipeline.", "I led a ten-week education program and career panels that lifted engagement and morale, and scaled recruiting to draw three hundred-plus candidates a cycle."] },
+    { title: "ClearPoint Neuro", year: "2023", img: "", role: "Contract Project Manager", date: "Dec 2022 to Jun 2023", category: "Market Entry · MedTech", tags: ["Market Entry", "MedTech", "APAC"], desc: "Project-managed market-entry strategy for a neuro medical-device company across APAC.", long: ["I directed DBS and LITT market-entry strategy across four APAC markets, weighing demand, reimbursement, and competition in each.", "I assessed nearly three hundred treatment institutions, ten cell and gene therapy partners, and the main competitors to prioritize where to enter first."] },
+    { title: "Varian Medical Systems", year: "2022", img: "", role: "Contract Healthcare Consultant · Siemens Healthineers", date: "Jan 2022 to May 2022", category: "Healthcare · Research", tags: ["Survey Analysis", "Market Mapping", "Interviews"], desc: "Turned patient surveys and physician interviews into treatment insights and investment priorities.", long: ["I cleaned and analyzed patient-survey responses across seven countries to uncover real treatment pathways and unmet needs.", "I mapped five focal therapies across the US and four European markets, turning physician interviews into a clear set of investment priorities."] },
+    { title: "Nextnet", year: "2022", img: "", role: "Contract AI Consultant · Angel-funded startup", date: "Aug 2022 to Dec 2022", category: "Strategy · AI", tags: ["TAM", "Pricing", "GTM"], desc: "Consulting for an early AI startup on where to play and how to price.", long: ["I synthesized twenty-five-plus expert interviews and market research across three segments to point the team at Big Pharma as the priority in a very large market.", "I benchmarked four competitor pricing models to shape a segment-based enterprise pricing and go-to-market approach."] },
+    { title: "Republic of Korea Air Force", year: "2025", img: "", role: "Sergeant · Scientific Control Center", date: "Sep 2023 to Jun 2025", category: "Military Service", tags: ["Operations", "Simulation", "Leadership"], desc: "Served as a sergeant running simulations and surveillance operations.", long: ["I orchestrated more than ten war-threat simulations and optimized a couple hundred CCTV surveillance feeds.", "Two years of serious, high-stakes work on a schedule that did not care how I felt that day. It is where the calm under pressure comes from."] }
   ],
 
   locations: [
@@ -390,7 +395,7 @@ const SITE = {
     const grid = el("div", "wgrid");
     SITE.work.forEach(w => {
       const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0");
-      const imgw = el("div", "wcard-img"); const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; im.loading = "lazy"; imgw.appendChild(im); c.appendChild(imgw);
+      const imgw = el("div", "wcard-img"); if (w.img) { const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; im.loading = "lazy"; imgw.appendChild(im); } else { const ph = el("div", "wcard-ph"); ph.textContent = w.title.split(" ").map(function (s) { return s[0]; }).join("").slice(0, 3).toUpperCase(); imgw.appendChild(ph); } c.appendChild(imgw);
       const b = el("div", "wcard-body");
       const top = el("div", "wc-top"); top.appendChild(el("h3", "wc-title", w.title.toUpperCase())); top.appendChild(el("span", "wc-year", w.year)); b.appendChild(top);
       b.appendChild(el("p", "wc-desc", w.desc));
@@ -403,7 +408,7 @@ const SITE = {
     box.appendChild(grid);
   }
 
-  let pnav = null;
+  let pnav = null, planeDir = "down", lastSY = 0;
   function removePnav() { const o = doc.getElementById("pnav"); if (o && o.parentNode) o.parentNode.removeChild(o); pnav = null; }
   function buildPhoto(box) {
     const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf("photo"))); l.appendChild(el("span", "", "( photography · six issues, six places )")); box.appendChild(l);
@@ -440,7 +445,7 @@ const SITE = {
     /* side-rail navigator */
     const nav = el("div"); nav.id = "pnav";
     const seg = el("div", "pnav-seg"); nav.appendChild(seg);
-    const plane = el("div", "pnav-plane"); plane.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21 L4 5 L12 9 L20 5 Z"/></svg>'; nav.appendChild(plane);
+    const plane = el("div", "pnav-plane"); plane.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"><path d="M12 21 L4 5 L12 9 L20 5 Z"/></svg>'; nav.appendChild(plane);
     const dots = [], accs = SITE.locations.map(x => x.acc), names = SITE.locations.map(x => x.name);
     SITE.locations.forEach((L, i) => {
       const d = el("button", "pnav-dot"); d.style.background = L.acc; d.setAttribute("aria-label", L.name);
@@ -449,7 +454,8 @@ const SITE = {
     });
     const label = el("div", "pnav-label"); nav.appendChild(label);
     doc.body.appendChild(nav);
-    pnav = { nav: nav, secEls: secEls, seg: seg, plane: plane, dots: dots, label: label, accs: accs, names: names, active: -1 };
+    pnav = { nav: nav, secEls: secEls, seg: seg, plane: plane, planeSvg: plane.querySelector("svg"), dots: dots, label: label, accs: accs, names: names, active: -1 };
+    if (pnav.planeSvg) pnav.planeSvg.style.transform = planeDir === "up" ? "rotate(180deg)" : "rotate(0deg)";
     applyPnav(0, 0);
   }
   function pnavGeom() { const H = (pnav && pnav.nav.clientHeight) || 480; const center = H / 2; const lineLen = clamp(H * 0.30, 120, 200); return { center: center, lineLen: lineLen, yTop: center - lineLen / 2, yBot: center + lineLen / 2 }; }
@@ -471,6 +477,8 @@ const SITE = {
   }
   function updatePnav() {
     if (current !== "photo" || !pnav) return;
+    const sy = window.scrollY || 0;
+    if (Math.abs(sy - lastSY) > 2) { const nd = sy > lastSY ? "down" : "up"; if (nd !== planeDir) { planeDir = nd; if (pnav.planeSvg) pnav.planeSvg.style.transform = nd === "up" ? "rotate(180deg)" : "rotate(0deg)"; } lastSY = sy; }
     const vh = window.innerHeight || 800, thr = vh * 0.4;
     let a = 0; for (let i = 0; i < pnav.secEls.length; i++) { if (pnav.secEls[i].getBoundingClientRect().top <= thr) a = i; }
     const act = pnav.secEls[a].getBoundingClientRect();
