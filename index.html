@@ -95,6 +95,11 @@
   .vlbl .ix{ color:var(--dim); }
   .vtitle{ font-weight:800; text-transform:uppercase; letter-spacing:-.03em; font-size:clamp(2.6rem,9vw,8.5rem); line-height:.92; margin-bottom:clamp(20px,3vh,34px); }
   .vintro{ max-width:60ch; font-size:clamp(1rem,1.5vw,1.2rem); line-height:1.55; color:var(--dim); margin-bottom:clamp(36px,6vh,66px); }
+  .exp-title{ display:block; width:100%; overflow:hidden; margin:0 0 clamp(22px,3.4vh,44px); line-height:.8; text-transform:uppercase; font-weight:800; color:var(--ink); }
+  .exp-in{ display:inline-block; transform-origin:left center; white-space:nowrap; will-change:transform; }
+  .exp-title.f-garamond{ font-weight:500; } .exp-title.f-archivoblack{ font-weight:400; } .exp-title.f-mono{ font-weight:700; }
+  .work-exp{ font-size:clamp(3rem,15.5vw,12.5rem); }
+  .photo-title{ font-size:clamp(3rem,15vw,12rem); border-bottom:3px solid currentColor; padding-bottom:clamp(6px,1.2vh,16px); margin-bottom:clamp(30px,5vh,64px); }
 
   .wgrid{ display:grid; grid-template-columns:1fr; gap:clamp(18px,2.4vw,30px); }
   @media (min-width:820px){ .wgrid{ grid-template-columns:1fr 1fr; } }
@@ -336,7 +341,7 @@ const SITE = {
   $("sideL").textContent = SITE.sideL.toUpperCase();
   $("sideR").textContent = SITE.sideR.toUpperCase();
   const tbNav = $("tbNav");
-  [["", "Home", "#/", false], ["work", "Work", "#/work", false], ["art", "Art", SITE.artLink, true], ["photo", "Photography", "#/photo", false]].forEach(([id, label, href, ext]) => { const a = el("a", "", label.toUpperCase()); a.href = href; if (!ext) { a.dataset.id = id; } tbNav.appendChild(a); });
+  [["", "Home", "#/", false], ["work", "Work", "#/work", false], ["art", "Art", SITE.artLink, true], ["photo", "Photography", "#/photo", false]].forEach(([id, label, href, ext]) => { const a = el("a", "", label.toUpperCase()); a.href = href; if (ext) { a.target = "_self"; a.rel = "noopener"; a.addEventListener("click", function (e) { e.preventDefault(); window.location.assign(href); }); } else { a.dataset.id = id; } tbNav.appendChild(a); });
   $("hfL").textContent = SITE.footL; $("hfR").textContent = SITE.footR;
 
   const panelsEl = $("panels"), hud = $("hud");
@@ -395,8 +400,16 @@ const SITE = {
   const numOf = id => { const i = SITE.panels.findIndex(p => p.id === id); return i < 0 ? "" : pad2(i); };
   function head(id, withTitle) { const t = meta(id); const frag = el("div"); const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf(id))); l.appendChild(el("span", "", "( " + id + " )")); frag.appendChild(l); if (withTitle) frag.appendChild(el("h2", "vtitle", String(t.title).toUpperCase())); return frag; }
 
+  const PFONTS = ["f-inter", "f-garamond", "f-archivo-wide", "f-archivoblack", "f-mono"];
+  let photoFontTimer = null;
+  function stopPhotoFont() { if (photoFontTimer) { clearInterval(photoFontTimer); photoFontTimer = null; } }
+  function fitWide(span) { if (!span || !span.parentNode) return; span.style.transform = "scaleX(1)"; const cw = span.parentNode.clientWidth, tw = span.getBoundingClientRect().width; if (cw <= 0 || tw <= 0) return; span.style.transform = "scaleX(" + (cw / tw) + ")"; }
+  function fitSoon(span) { fitWide(span); requestAnimationFrame(function () { fitWide(span); }); if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(function () { fitWide(span); }); setTimeout(function () { fitWide(span); }, 260); }
+  function refitTitles() { const els = doc.querySelectorAll("#view .exp-in"); Array.prototype.forEach.call(els, function (s) { fitWide(s); }); }
+
   function buildWork(box) {
-    box.appendChild(head("work", true));
+    box.appendChild(head("work", false));
+    const et = el("h2", "exp-title work-exp f-archivo-wide"); const eti = el("span", "exp-in", "Experiences"); et.appendChild(eti); box.appendChild(et); fitSoon(eti);
     box.appendChild(el("p", "vintro", SITE.workIntro));
     const grid = el("div", "wgrid");
     SITE.work.forEach(w => {
@@ -415,9 +428,11 @@ const SITE = {
   }
 
   let pnav = null, planeDir = "down", lastSY = 0;
-  function removePnav() { const o = doc.getElementById("pnav"); if (o && o.parentNode) o.parentNode.removeChild(o); pnav = null; }
+  function removePnav() { stopPhotoFont(); const o = doc.getElementById("pnav"); if (o && o.parentNode) o.parentNode.removeChild(o); pnav = null; }
   function buildPhoto(box) {
     const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf("photo"))); l.appendChild(el("span", "", "( photography · six issues, six places )")); box.appendChild(l);
+    const ptitle = el("h2", "exp-title photo-title f-inter"); const ptin = el("span", "exp-in", "Photography"); ptitle.appendChild(ptin); box.appendChild(ptitle); fitSoon(ptin);
+    stopPhotoFont(); (function () { let fi = 0; photoFontTimer = setInterval(function () { fi = (fi + 1) % PFONTS.length; ptitle.className = "exp-title photo-title " + PFONTS[fi]; fitWide(ptin); }, 100); })();
     const wrap = el("div", "locwrap");
     const secEls = [];
     SITE.locations.forEach((L, li) => {
@@ -511,7 +526,7 @@ const SITE = {
   }
   function closeView() {
     if (current === "") { setNav(); return; }
-    current = ""; pnav = null; body.classList.remove("viewing"); body.classList.remove("in-photo");
+    current = ""; pnav = null; stopPhotoFont(); body.classList.remove("viewing"); body.classList.remove("in-photo");
     view.hidden = true; home.hidden = false; viewBody.innerHTML = "";
     window.scrollTo(0, homeScroll); measureHud(); setNav(); ensureRaf();
   }
@@ -572,7 +587,7 @@ const SITE = {
   function ensureRaf() { if (!rafId && !doc.hidden) { lastT = performance.now(); rafId = requestAnimationFrame(loop); } }
   doc.addEventListener("visibilitychange", () => { if (!doc.hidden) ensureRaf(); });
   let rt = 0;
-  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(measureHud, 160); });
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(function () { measureHud(); refitTitles(); }, 160); });
 
   try {
     root.classList.add("booted");
