@@ -151,7 +151,25 @@
   .loc.x-dossier::before, .loc.x-dossier::after{ content:""; position:absolute; width:18px; height:18px; }
   .loc.x-dossier::before{ top:22px; left:22px; border-top:1.5px solid var(--lacc); border-left:1.5px solid var(--lacc); }
   .loc.x-dossier::after{ bottom:22px; right:22px; border-bottom:1.5px solid var(--lacc); border-right:1.5px solid var(--lacc); }
-  .loc-head{ position:relative; margin-bottom:clamp(30px,5vh,60px); max-width:78ch; }
+  .loc > .loc-atmos{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .loc-atmos::after{ content:""; position:absolute; inset:-8%; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"); background-size:150px 150px; opacity:var(--grain,0); }
+  .iss-california{ --grain:.07; }
+  .iss-california .loc-atmos{ background:radial-gradient(130% 55% at 82% 0%, rgba(232,196,176,.16), transparent 62%); }
+  .iss-california .loc-atmos::before{ content:""; position:absolute; top:0; bottom:0; left:50%; width:2px; transform:translateX(-50%); background:repeating-linear-gradient(180deg, var(--lacc) 0 16px, transparent 16px 36px); opacity:.2; }
+  .iss-capecod{ --grain:.05; }
+  .iss-capecod .loc-atmos{ background:radial-gradient(125% 85% at 50% 42%, transparent 52%, rgba(255,255,255,.5)); }
+  .iss-capecod .loc-atmos::before{ content:""; position:absolute; top:0; bottom:0; left:50%; border-left:1px dotted var(--ldim); opacity:.35; }
+  .iss-chicago{ --grain:0; }
+  .iss-chicago .loc-atmos{ background-image:repeating-linear-gradient(0deg, rgba(200,16,46,.07) 0 1px, transparent 1px 104px); }
+  .iss-hawaii{ --grain:.06; }
+  .iss-hawaii .loc-atmos::before{ content:""; position:absolute; left:0; right:0; bottom:0; height:34%; background:linear-gradient(0deg, rgba(255,107,74,.18), transparent); animation:emberPulse 5.5s ease-in-out infinite; }
+  @keyframes emberPulse{ 0%,100%{ opacity:.45 } 50%{ opacity:1 } }
+  .iss-japan{ --grain:.035; }
+  .iss-japan .loc-atmos::before{ content:""; position:absolute; top:26px; right:26px; width:15px; height:15px; opacity:.85; background:linear-gradient(var(--lacc),var(--lacc)) center/1.5px 100% no-repeat, linear-gradient(var(--lacc),var(--lacc)) center/100% 1.5px no-repeat; }
+  .iss-seoul{ --grain:.08; }
+  .iss-seoul .loc-atmos{ background-image:radial-gradient(rgba(27,75,156,.10) 1px, transparent 1.5px), linear-gradient(180deg, transparent 47%, rgba(38,34,30,.05) 50%, transparent 53%); background-size:7px 7px, 100% 100%; }
+  @media (prefers-reduced-motion:reduce){ .iss-hawaii .loc-atmos::before{ animation:none; opacity:.7; } }
+  .loc-head{ position:relative; z-index:1; margin-bottom:clamp(30px,5vh,60px); max-width:78ch; }
   .loc-head.al-center{ margin-left:auto; margin-right:auto; text-align:center; }
   .loc-head.al-right{ margin-left:auto; text-align:right; }
   .loc-kicker{ font:600 11px/1.4 var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--lacc); }
@@ -167,7 +185,7 @@
   .f-garamond .loc-blurb{ font-family:"EB Garamond",serif; font-size:clamp(1.15rem,1.9vw,1.55rem); }
   .f-mono .loc-blurb{ font-family:"JetBrains Mono",var(--mono); font-size:clamp(.95rem,1.4vw,1.15rem); }
   .loc-meta{ margin-top:16px; font:600 11px/1.5 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--ldim); }
-  .loc-cols{ columns:3; column-gap:clamp(7px,0.9vw,14px); }
+  .loc-cols{ position:relative; z-index:1; columns:3; column-gap:clamp(7px,0.9vw,14px); }
   .loc-cols.airy{ column-gap:clamp(12px,1.6vw,28px); }
   .loc-item{ break-inside:avoid; margin:0 0 clamp(8px,1vw,16px); }
   .loc-cols.airy .loc-item{ margin-bottom:clamp(26px,4vh,64px); }
@@ -463,8 +481,9 @@ const SITE = {
     photoIO = ("IntersectionObserver" in window) ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) photoVisible.add(e.target); else photoVisible.delete(e.target); }); }, { rootMargin: "150px 0px" }) : null;
     const secEls = [];
     SITE.locations.forEach((L, li) => {
-      const sec = el("section", "loc " + L.font + (L.extra ? " x-" + L.extra : ""));
+      const sec = el("section", "loc iss-" + L.key + " " + L.font + (L.extra ? " x-" + L.extra : ""));
       sec.style.cssText = "--lbg:" + L.bg + ";--link:" + L.ink + ";--ldim:" + L.ldim + ";--lacc:" + L.acc + ";--cols:" + L.cols + ";";
+      sec.appendChild(el("div", "loc-atmos"));
       const hd = el("div", "loc-head al-" + L.align);
       hd.appendChild(el("div", "loc-kicker", L.kicker.replace(/Issue \d+/, "Issue " + pad2(li + 1))));
       hd.appendChild(el("h2", "loc-name", L.name));
