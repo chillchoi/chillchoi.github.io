@@ -107,8 +107,12 @@
   .exp-title.f-garamond{ font-weight:500; } .exp-title.f-archivoblack{ font-weight:400; } .exp-title.f-mono{ font-weight:700; }
   .work-exp{ font-size:clamp(3rem,15.5vw,12.5rem); }
   .photo-title{ font-size:clamp(3rem,15vw,12rem); border-bottom:3px solid currentColor; padding-bottom:clamp(6px,1.2vh,16px); margin-bottom:clamp(30px,5vh,64px); }
-  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--ink); background:var(--bg); border-top:1px solid var(--ink); padding:clamp(22px,4vh,56px) var(--pad) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,13vw,11rem); transition:color .3s ease; }
-  #mfoot:hover{ color:var(--acc); }
+  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--fink,var(--ink)); background:var(--fbg,var(--bg)); border-top:1px solid var(--fbd,var(--ink)); padding:clamp(22px,4vh,56px) var(--pad) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,12.5vw,11rem); transition:color .3s ease, background .45s ease, border-color .45s ease; }
+  #mfoot:hover{ color:var(--facc,var(--acc)); }
+  .mfoot-3{ display:none; }
+  .mfoot-3 .mfl{ display:block; }
+  .mfoot-3 .exp-in{ font-size:clamp(3rem,19vw,7rem); }
+  @media (max-width:600px){ .mfoot-1{ display:none; } .mfoot-3{ display:block; } }
 
   .wgrid{ display:grid; grid-template-columns:1fr; gap:clamp(18px,2.4vw,30px); }
   @media (min-width:820px){ .wgrid{ grid-template-columns:1fr 1fr; } }
@@ -277,7 +281,7 @@
 
 <section id="view" hidden><div class="shell"><button id="backBtn">← Back</button><div id="viewBody"></div></div></section>
 
-<footer id="mfoot" role="button" tabindex="0" aria-label="Back to home"><span class="exp-in" id="mfootIn">Justin Joonseo Choi</span></footer>
+<footer id="mfoot" role="button" tabindex="0" aria-label="Back to home"><span class="mfoot-1 exp-in" id="mfootIn">Justin Joonseo Choi</span><span class="mfoot-3"><span class="mfl"><span class="exp-in">Justin</span></span><span class="mfl"><span class="exp-in">Joonseo</span></span><span class="mfl"><span class="exp-in">Choi</span></span></span></footer>
 
 <div id="wdrawer" hidden><div class="wd-scrim"></div><aside class="wd-panel" role="dialog" aria-modal="true"><button class="wd-x" id="wdX" aria-label="Close">✕</button><div id="wdBody"></div></aside></div>
 
@@ -589,11 +593,11 @@ const SITE = {
     body.classList.add("viewing"); body.classList.add("nav-light"); body.classList.toggle("in-photo", id === "photo"); hud.classList.remove("show");
     home.hidden = true; view.hidden = false;
     view.classList.remove("vin"); void view.offsetWidth; view.classList.add("vin");
-    window.scrollTo(0, 0); if (id === "photo") updatePnav(); setNav(); ensureRaf();
+    window.scrollTo(0, 0); if (id === "photo") updatePnav(); themeFooter(id); setNav(); ensureRaf();
   }
   function closeView() {
     if (current === "") { setNav(); return; }
-    current = ""; removePnav(); body.classList.remove("viewing"); body.classList.remove("in-photo");
+    current = ""; removePnav(); themeFooter(""); body.classList.remove("viewing"); body.classList.remove("in-photo");
     view.hidden = true; home.hidden = false; viewBody.innerHTML = "";
     window.scrollTo(0, homeScroll); measureHud(); setNav(); ensureRaf();
   }
@@ -655,18 +659,25 @@ const SITE = {
   doc.addEventListener("visibilitychange", () => { if (!doc.hidden) ensureRaf(); });
   let rt = 0;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(function () { measureHud(); refitTitles(); }, 160); });
+  function themeFooter(id) {
+    const mf = $("mfoot"); if (!mf) return;
+    const L = (id === "photo" && SITE.locations && SITE.locations.length) ? SITE.locations[SITE.locations.length - 1] : null;
+    if (L) { mf.style.setProperty("--fbg", L.bg); mf.style.setProperty("--fink", L.ink); mf.style.setProperty("--facc", L.acc); mf.style.setProperty("--fbd", L.ink); }
+    else { mf.style.removeProperty("--fbg"); mf.style.removeProperty("--fink"); mf.style.removeProperty("--facc"); mf.style.removeProperty("--fbd"); }
+  }
   (function buildFooter() {
-    const mf = $("mfoot"), mfi = $("mfootIn");
-    if (!mf || !mfi) return;
+    const mf = $("mfoot"); if (!mf) return;
+    const spans = mf.querySelectorAll(".exp-in");
     let ffi = 0, fhover = false;
+    function fitAll() { Array.prototype.forEach.call(spans, function (s) { fitWide(s); }); }
     mf.addEventListener("mouseenter", function () { fhover = true; });
     mf.addEventListener("mouseleave", function () { fhover = false; });
-    setInterval(function () { if (fhover) return; ffi = (ffi + 1) % PFONTS.length; mfi.className = "exp-in " + PFONTS[ffi]; fitWide(mfi); }, 200);
+    setInterval(function () { if (fhover) return; ffi = (ffi + 1) % PFONTS.length; mf.className = PFONTS[ffi]; fitAll(); }, 200);
     function goHome() { if (typeof location !== "undefined") location.hash = "#/"; window.scrollTo({ top: 0, behavior: "smooth" }); }
     mf.addEventListener("click", goHome);
     mf.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); } });
-    fitSoon(mfi);
-    window.addEventListener("resize", function () { fitWide(mfi); });
+    fitAll(); if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(fitAll); setTimeout(fitAll, 300); setTimeout(fitAll, 800);
+    window.addEventListener("resize", fitAll);
   })();
 
   try {
