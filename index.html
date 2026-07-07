@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script>document.documentElement.classList.add("boot");</script>
+<script src="photos/counts.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
@@ -166,8 +167,8 @@
   .f-garamond .loc-blurb{ font-family:"EB Garamond",serif; font-size:clamp(1.15rem,1.9vw,1.55rem); }
   .f-mono .loc-blurb{ font-family:"JetBrains Mono",var(--mono); font-size:clamp(.95rem,1.4vw,1.15rem); }
   .loc-meta{ margin-top:16px; font:600 11px/1.5 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--ldim); }
-  .loc-cols{ columns:var(--cols); column-gap:clamp(8px,1vw,16px); }
-  .loc-cols.airy{ column-gap:clamp(22px,3.2vw,56px); }
+  .loc-cols{ columns:3; column-gap:clamp(7px,0.9vw,14px); }
+  .loc-cols.airy{ column-gap:clamp(12px,1.6vw,28px); }
   .loc-item{ break-inside:avoid; margin:0 0 clamp(8px,1vw,16px); }
   .loc-cols.airy .loc-item{ margin-bottom:clamp(26px,4vh,64px); }
   .loc-cell{ display:block; width:100%; cursor:pointer; overflow:hidden; background:rgba(0,0,0,.06); }
@@ -175,7 +176,7 @@
   .loc-cell:hover img{ opacity:.9; }
   .loc-block{ display:flex; align-items:flex-end; min-height:clamp(150px,20vw,250px); padding:16px 18px; font-family:inherit; font-weight:800; font-size:clamp(15px,1.9vw,26px); line-height:1.04; letter-spacing:.01em; text-transform:uppercase; }
   .loc-block .bl-k{ display:block; font:600 10px/1.4 var(--mono); letter-spacing:.2em; opacity:.85; margin-bottom:8px; }
-  @media (max-width:700px){ .loc-cols{ columns:2 !important; } .loc-cols.airy{ columns:1 !important; } }
+  @media (max-width:400px){ .loc-cols{ columns:2 !important; } .loc-cols.airy{ columns:2 !important; } }
 
   /* side-rail navigator — centered rail, clustering dots, traveling plane */
   #pnav{ position:fixed; right:clamp(60px,6vw,100px); top:50%; transform:translateY(-50%); height:min(64vh,540px); width:180px; z-index:36; pointer-events:none; opacity:0; visibility:hidden; transition:opacity .4s ease, visibility .4s ease; }
@@ -457,7 +458,7 @@ const SITE = {
       sec.appendChild(hd);
       const cols = el("div", "loc-cols" + (L.airy ? " airy" : ""));
       const photos = [];
-      const NP = (L.n || 0) + PHOTO_BUFFER;
+      const NP = (window.PHOTO_COUNTS && window.PHOTO_COUNTS[L.key]) ? window.PHOTO_COUNTS[L.key] : (L.n || 0) + PHOTO_BUFFER;
       for (let i = 0; i < NP; i++) photos.push({ src: "photos/" + L.key + "/" + pad2(i + 1) + ".jpg", label: L.name + " " + pad2(i + 1) });
       const blocks = (L.blocks || []).slice();
       function pushBlock(bd) { const blk = el("div", "loc-item"); const bx = el("div", "loc-block"); bx.style.background = bd.bg; bx.style.color = bd.ink; const span = el("span", ""); span.appendChild(el("span", "bl-k", bd.k)); span.appendChild(doc.createTextNode(bd.t)); bx.appendChild(span); blk.appendChild(bx); cols.appendChild(blk); }
