@@ -169,6 +169,21 @@
   .iss-seoul{ --grain:.08; }
   .iss-seoul .loc-atmos{ background-image:radial-gradient(rgba(27,75,156,.10) 1px, transparent 1.5px), linear-gradient(180deg, transparent 47%, rgba(38,34,30,.05) 50%, transparent 53%); background-size:7px 7px, 100% 100%; }
   @media (prefers-reduced-motion:reduce){ .iss-hawaii .loc-atmos::before{ animation:none; opacity:.7; } }
+  /* ---- richer detail: California / Japan / Cape Cod ---- */
+  .iss-california .loc-cell::after, .iss-japan .loc-cell::after, .iss-capecod .loc-cell::after{ content:""; position:absolute; inset:0; z-index:2; pointer-events:none; }
+  /* California: heat wash + bottom mile-tick ruler, amber head rule, smog-pink offset plate, asphalt photo frames */
+  .iss-california .loc-atmos{ background:repeating-linear-gradient(90deg, rgba(232,163,61,.55) 0 1px, transparent 1px 26px) left bottom/100% 11px no-repeat, radial-gradient(130% 55% at 82% 0%, rgba(232,196,176,.16), transparent 62%); }
+  .iss-california .loc-head{ border-top:1px solid var(--lacc); padding-top:16px; }
+  .iss-california .loc-head::before{ content:""; position:absolute; z-index:-1; left:-14px; top:4px; width:min(44%,300px); height:calc(100% - 8px); background:rgba(232,196,176,.18); transform:translate(11px,12px); }
+  .iss-california .loc-cell::after{ border:1px solid rgba(74,74,70,.45); }
+  /* Japan: keyline photo mounts, CMYK misregistration echo, vermilion kicker rule */
+  .iss-japan .loc-cell::after{ border:1px solid rgba(26,26,28,.5); }
+  .iss-japan .loc-cell{ box-shadow:1.6px 0 0 rgba(0,173,204,.20), -1.6px 0 0 rgba(227,66,52,.16); }
+  .iss-japan .loc-kicker{ display:inline-block; border-bottom:1px solid var(--lacc); padding-bottom:6px; }
+  /* Cape Cod: tide rings, double almanac rule, matted rose photo plates */
+  .iss-capecod .loc-atmos{ background:repeating-radial-gradient(circle at 50% 18%, transparent 0 37px, rgba(110,123,138,.09) 37px 38px), radial-gradient(125% 85% at 50% 42%, transparent 52%, rgba(255,255,255,.5)); }
+  .iss-capecod .loc-head{ border-bottom:1px solid rgba(110,123,138,.45); box-shadow:0 3px 0 rgba(110,123,138,.20); padding-bottom:14px; }
+  .iss-capecod .loc-cell::after{ border:1px solid rgba(217,164,143,.7); box-shadow:inset 0 0 0 4px rgba(246,247,245,.45); }
   .loc-head{ position:relative; z-index:1; margin-bottom:clamp(30px,5vh,60px); max-width:78ch; }
   .loc-head.al-center{ margin-left:auto; margin-right:auto; text-align:center; }
   .loc-head.al-right{ margin-left:auto; text-align:right; }
@@ -190,7 +205,7 @@
   .loc-item{ break-inside:avoid; margin:0 0 clamp(8px,1vw,16px); }
   .loc-cols.airy .loc-item{ margin-bottom:clamp(26px,4vh,64px); }
   .loc-cell{ position:relative; display:block; width:100%; cursor:pointer; overflow:hidden; background:rgba(0,0,0,.06); aspect-ratio:4/5; }
-  .loc-cell img{ position:absolute; left:0; top:0; width:100%; height:auto; display:block; will-change:transform; transition:opacity .3s ease; }
+  .loc-cell img{ position:absolute; left:0; top:0; width:100%; height:118%; object-fit:cover; display:block; will-change:transform; transition:opacity .3s ease; }
   .loc-cell:hover img{ opacity:.9; }
   .loc-block{ display:flex; align-items:flex-end; min-height:clamp(150px,20vw,250px); padding:16px 18px; font-family:inherit; font-weight:800; font-size:clamp(15px,1.9vw,26px); line-height:1.04; letter-spacing:.01em; text-transform:uppercase; }
   .loc-block .bl-k{ display:block; font:600 10px/1.4 var(--mono); letter-spacing:.2em; opacity:.85; margin-bottom:8px; }
@@ -466,7 +481,7 @@ const SITE = {
     photoVisible.forEach(function (cell) {
       const img = cell.querySelector("img"); if (!img) return;
       const r = cell.getBoundingClientRect(); if (r.height <= 0) return;
-      const over = r.height * 0.176;
+      const over = r.height * 0.18;
       let p = (vh - r.top) / (vh + r.height); p = p < 0 ? 0 : (p > 1 ? 1 : p);
       img.style.transform = "translate3d(0," + (-(p * over)).toFixed(1) + "px,0)";
     });
@@ -499,7 +514,7 @@ const SITE = {
       for (let i = 0; i < photos.length; i++) {
         while (blocks.length && blocks[0].at === i) pushBlock(blocks.shift());
         const it = el("div", "loc-item");
-        const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; (function (item) { img.addEventListener("error", function () { if (item.parentNode) item.parentNode.removeChild(item); }); })(it); (function (c, m) { function setar() { if (m.naturalWidth) c.style.aspectRatio = m.naturalWidth + " / " + (m.naturalHeight * 0.85); } m.addEventListener("load", setar); if (m.complete) setar(); })(cell, img); if (photoIO) photoIO.observe(cell); cell.appendChild(img);
+        const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; (function (item) { img.addEventListener("error", function () { if (item.parentNode) item.parentNode.removeChild(item); }); })(it); (function (c, m) { function setar() { if (!m.naturalWidth) return; var ar = m.naturalWidth / m.naturalHeight; ar = ar < 0.72 ? 0.72 : (ar > 1.4 ? 1.4 : ar); c.style.aspectRatio = ar; } m.addEventListener("load", setar); if (m.complete) setar(); })(cell, img); if (photoIO) photoIO.observe(cell); cell.appendChild(img);
         cell.setAttribute("role", "button"); cell.setAttribute("aria-label", "Open " + photos[i].label);
         cell.addEventListener("click", function () { const cells = Array.prototype.slice.call(cols.querySelectorAll(".loc-cell")); const live = cells.map(function (c) { const im = c.querySelector("img"); return { src: im ? im.getAttribute("src") : "", label: im ? (im.alt || "") : "" }; }); const pos = cells.indexOf(cell); lbOpen(live, pos < 0 ? 0 : pos); });
         it.appendChild(cell); cols.appendChild(it);
