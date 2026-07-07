@@ -411,7 +411,7 @@ const SITE = {
   function head(id, withTitle) { const t = meta(id); const frag = el("div"); const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf(id))); l.appendChild(el("span", "", "( " + id + " )")); frag.appendChild(l); if (withTitle) frag.appendChild(el("h2", "vtitle", String(t.title).toUpperCase())); return frag; }
 
   const PFONTS = ["f-inter", "f-garamond", "f-oswald", "f-archivo-wide", "f-archivoblack", "f-mono", "f-anton"];
-  const PHOTO_BUFFER = 10;
+  const PHOTO_BUFFER = 20;
   let photoFontTimer = null;
   function stopPhotoFont() { if (photoFontTimer) { clearInterval(photoFontTimer); photoFontTimer = null; } }
   function fitWide(span) { if (!span || !span.parentNode) return; span.style.transform = "scaleX(1)"; const cw = span.parentNode.clientWidth, tw = span.getBoundingClientRect().width; if (cw <= 0 || tw <= 0) return; span.style.transform = "scaleX(" + (cw / tw) + ")"; }
