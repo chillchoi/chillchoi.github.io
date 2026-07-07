@@ -73,7 +73,7 @@
   .htitle:hover .ht-in{ mix-blend-mode:difference; transform:scale(1.06) translateX(.02em); }
 
   /* SKILLS — big crowded words, photo on its own parallax */
-  #skills{ position:relative; z-index:2; background:#fff; color:var(--ink); isolation:isolate; border-top:1px solid var(--ink); border-bottom:1px solid var(--ink); padding:clamp(70px,10vh,120px) var(--pad); overflow:hidden; }
+  #skills{ position:relative; z-index:2; background:var(--bg); color:var(--ink); isolation:isolate; border-top:1px solid var(--ink); border-bottom:1px solid var(--ink); padding:clamp(70px,10vh,120px) var(--pad); overflow:hidden; }
   #skills .sk-lbl{ position:relative; z-index:3; display:flex; gap:14px; align-items:baseline; font:500 11px/1 var(--mono); letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin-bottom:clamp(18px,3vh,32px); }
   .sk-stage{ position:relative; min-height:min(96vh,1000px); }
   .sk-photo{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(58%,860px); height:72%; border:1px solid rgba(20,20,18,.5); overflow:hidden; z-index:1; will-change:transform; }
@@ -107,7 +107,7 @@
   .exp-title.f-garamond{ font-weight:500; } .exp-title.f-archivoblack{ font-weight:400; } .exp-title.f-mono{ font-weight:700; }
   .work-exp{ font-size:clamp(3rem,15.5vw,12.5rem); }
   .photo-title{ font-size:clamp(3rem,15vw,12rem); border-bottom:3px solid currentColor; padding-bottom:clamp(6px,1.2vh,16px); margin-bottom:clamp(30px,5vh,64px); }
-  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--fink,var(--ink)); background:var(--fbg,var(--bg)); border-top:1px solid var(--fbd,var(--ink)); padding:clamp(22px,4vh,56px) clamp(8px,2vw,22px) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,12.5vw,11rem); transition:color .3s ease, background .45s ease, border-color .45s ease; }
+  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--fink,var(--ink)); background:var(--fbg,var(--bg)); padding:clamp(22px,4vh,56px) clamp(8px,2vw,22px) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,12.5vw,11rem); transition:color .3s ease, background .45s ease, border-color .45s ease; }
   #mfoot:hover{ color:var(--facc,var(--acc)); }
   #mfAtmos{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
   #mfAtmos .loc-atmos{ position:absolute; inset:0; overflow:hidden; }
@@ -173,7 +173,7 @@
   .iss-chicago{ --grain:0; }
   .iss-chicago .loc-atmos{ background-image:repeating-linear-gradient(0deg, rgba(200,16,46,.07) 0 1px, transparent 1px 104px); }
   .iss-hawaii{ --grain:.06; }
-  .iss-hawaii .loc-atmos::before{ content:""; position:absolute; left:0; right:0; bottom:0; height:34%; background:linear-gradient(0deg, rgba(255,107,74,.18), transparent); animation:emberPulse 5.5s ease-in-out infinite; }
+  .iss-hawaii .loc-item:nth-of-type(3n+1) .loc-cell::after{ content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border:4px solid #ff6b4a; }
   @keyframes emberPulse{ 0%,100%{ opacity:.45 } 50%{ opacity:1 } }
   .iss-japan{ --grain:.035; }
   .iss-japan .loc-atmos::before{ content:""; position:absolute; top:26px; right:26px; width:15px; height:15px; opacity:.85; background:linear-gradient(var(--lacc),var(--lacc)) center/1.5px 100% no-repeat, linear-gradient(var(--lacc),var(--lacc)) center/100% 1.5px no-repeat; }
@@ -340,7 +340,7 @@ const SITE = {
       blurb:"Japan after dark. Kyoto towers, Osaka neon, vending-machine light, and streets that look best right after rain.",
       blocks:[{ at:8, bg:"#e34234", ink:"#ffffff", k:"23:52 · SHINJUKU", t:"the machine hums" }] },
     { key:"hawaii", n:20, font:"f-archivoblack", cols:2, airy:false, align:"right", extra:"",
-      bg:"#151412", ink:"#f3efe6", ldim:"#8f8a80", acc:"#ff6b4a",
+      bg:"#0e0e0e", ink:"#f3efe6", ldim:"#8f8a80", acc:"#ff6b4a",
       kicker:"Issue 04 · Salt · Elemental", name:"Hawaii", meta:"paired forces",
       blurb:"Volcanic green against water that turns unreal blue. Mostly landscapes that did not need any help.",
       blocks:[{ at:4, bg:"#ff6b4a", ink:"#151412", k:"19:41", t:"water / stone" }, { at:13, bg:"#37b5a6", ink:"#151412", k:"12:10", t:"sun / rain" }] },
