@@ -278,22 +278,22 @@ const SITE = {
   locations: [
     { key:"capecod", n:17, font:"f-garamond", cols:2, airy:true, align:"center", extra:"",
       bg:"#f6f7f5", ink:"#2b2e33", ldim:"#6e7b8a", acc:"#d9a48f",
-      kicker:"Issue 01 · Low Tide · An Almanac", name:"Cape Cod", meta:"17 frames · first light 05:14",
+      kicker:"Issue 01 · Low Tide · An Almanac", name:"Cape Cod", meta:"first light · 05:14",
       blurb:"The Atlantic in the off-season. Grey water, empty dunes, lighthouses, and a lot of sky doing nothing in particular.",
       blocks:[{ at:6, bg:"#d9a48f", ink:"#2b2e33", k:"06:14 · ebb", t:"the fog left first" }] },
     { key:"chicago", n:21, font:"f-oswald", cols:3, airy:false, align:"left", extra:"grid",
       bg:"#ffffff", ink:"#000000", ldim:"#666666", acc:"#c8102e",
-      kicker:"Issue 02 · The Grid · International Style", name:"Chicago", meta:"21 frames · 8-column city",
+      kicker:"Issue 02 · The Grid · International Style", name:"Chicago", meta:"the 8-column city",
       blurb:"A city that shows off its engineering. Steel, the river, the L, and a skyline best shot from the bottom looking up.",
       blocks:[{ at:5, bg:"#c8102e", ink:"#ffffff", k:"STATE & MADISON", t:"the zero point" }, { at:15, bg:"#000000", ink:"#c8102e", k:"APPENDIX", t:"EXIF" }] },
     { key:"japan", n:41, font:"f-mono", cols:3, airy:true, align:"center", extra:"dossier",
       bg:"#f7f7f4", ink:"#1a1a1c", ldim:"#8a827c", acc:"#e34234",
-      kicker:"MA · Issue 03 · Negative Space · 23:52 JST", name:"Japan", meta:"41 frames · shot at night",
+      kicker:"MA · Issue 03 · Negative Space · 23:52 JST", name:"Japan", meta:"shot after dark",
       blurb:"Japan after dark. Kyoto towers, Osaka neon, vending-machine light, and streets that look best right after rain.",
       blocks:[{ at:8, bg:"#e34234", ink:"#ffffff", k:"23:52 · SHINJUKU", t:"the machine hums" }] },
     { key:"hawaii", n:20, font:"f-archivoblack", cols:2, airy:false, align:"right", extra:"",
       bg:"#151412", ink:"#f3efe6", ldim:"#8f8a80", acc:"#ff6b4a",
-      kicker:"Issue 04 · Salt · Elemental", name:"Hawaii", meta:"20 frames · paired forces",
+      kicker:"Issue 04 · Salt · Elemental", name:"Hawaii", meta:"paired forces",
       blurb:"Volcanic green against water that turns unreal blue. Mostly landscapes that did not need any help.",
       blocks:[{ at:4, bg:"#ff6b4a", ink:"#151412", k:"19:41", t:"water / stone" }, { at:13, bg:"#37b5a6", ink:"#151412", k:"12:10", t:"sun / rain" }] },
     { key:"california", n:32, font:"f-archivo-wide", cols:2, airy:false, align:"left", extra:"",
@@ -303,7 +303,7 @@ const SITE = {
       blocks:[{ at:3, bg:"#e8a33d", ink:"#201e1a", k:"MI 0142 · 17:38", t:"Coast → Valley" }, { at:12, bg:"#4a4a46", ink:"#faf5ea", k:"MI 0361 · 19:02", t:"Canyon → City" }] },
     { key:"seoul", n:37, font:"f-anton", cols:2, airy:false, align:"left", extra:"",
       bg:"#f0e9dc", ink:"#26221e", ldim:"#7a7264", acc:"#1b4b9c",
-      kicker:"Issue 06 · Ground Level", name:"Seoul", meta:"37 frames · street level",
+      kicker:"Issue 06 · Ground Level", name:"Seoul", meta:"street level",
       blurb:"Seoul at street level. Brick and neon, palace walls, market alleys, and a city that does not really slow down.",
       blocks:[{ at:2, bg:"#1b4b9c", ink:"#ffffff", k:"서울 · SEOUL", t:"street level" }, { at:3, bg:"#e86a33", ink:"#26221e", k:"22:40", t:"after dark" }] }
   ],
@@ -410,6 +410,7 @@ const SITE = {
   function head(id, withTitle) { const t = meta(id); const frag = el("div"); const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf(id))); l.appendChild(el("span", "", "( " + id + " )")); frag.appendChild(l); if (withTitle) frag.appendChild(el("h2", "vtitle", String(t.title).toUpperCase())); return frag; }
 
   const PFONTS = ["f-inter", "f-garamond", "f-oswald", "f-archivo-wide", "f-archivoblack", "f-mono", "f-anton"];
+  const PHOTO_BUFFER = 10;
   let photoFontTimer = null;
   function stopPhotoFont() { if (photoFontTimer) { clearInterval(photoFontTimer); photoFontTimer = null; } }
   function fitWide(span) { if (!span || !span.parentNode) return; span.style.transform = "scaleX(1)"; const cw = span.parentNode.clientWidth, tw = span.getBoundingClientRect().width; if (cw <= 0 || tw <= 0) return; span.style.transform = "scaleX(" + (cw / tw) + ")"; }
@@ -455,7 +456,8 @@ const SITE = {
       sec.appendChild(hd);
       const cols = el("div", "loc-cols" + (L.airy ? " airy" : ""));
       const photos = [];
-      for (let i = 0; i < L.n; i++) photos.push({ src: "photos/" + L.key + "/" + pad2(i + 1) + ".jpg", label: L.name + " " + pad2(i + 1) });
+      const NP = (L.n || 0) + PHOTO_BUFFER;
+      for (let i = 0; i < NP; i++) photos.push({ src: "photos/" + L.key + "/" + pad2(i + 1) + ".jpg", label: L.name + " " + pad2(i + 1) });
       const blocks = (L.blocks || []).slice();
       function pushBlock(bd) { const blk = el("div", "loc-item"); const bx = el("div", "loc-block"); bx.style.background = bd.bg; bx.style.color = bd.ink; const span = el("span", ""); span.appendChild(el("span", "bl-k", bd.k)); span.appendChild(doc.createTextNode(bd.t)); bx.appendChild(span); blk.appendChild(bx); cols.appendChild(blk); }
       for (let i = 0; i < photos.length; i++) {
@@ -463,7 +465,7 @@ const SITE = {
         const it = el("div", "loc-item");
         const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; (function (item) { img.addEventListener("error", function () { if (item.parentNode) item.parentNode.removeChild(item); }); })(it); cell.appendChild(img);
         cell.setAttribute("role", "button"); cell.setAttribute("aria-label", "Open " + photos[i].label);
-        (function (idx) { cell.addEventListener("click", () => lbOpen(photos, idx)); })(i);
+        cell.addEventListener("click", function () { const cells = Array.prototype.slice.call(cols.querySelectorAll(".loc-cell")); const live = cells.map(function (c) { const im = c.querySelector("img"); return { src: im ? im.getAttribute("src") : "", label: im ? (im.alt || "") : "" }; }); const pos = cells.indexOf(cell); lbOpen(live, pos < 0 ? 0 : pos); });
         it.appendChild(cell); cols.appendChild(it);
       }
       while (blocks.length) pushBlock(blocks.shift());
