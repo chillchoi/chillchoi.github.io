@@ -107,8 +107,13 @@
   .exp-title.f-garamond{ font-weight:500; } .exp-title.f-archivoblack{ font-weight:400; } .exp-title.f-mono{ font-weight:700; }
   .work-exp{ font-size:clamp(3rem,15.5vw,12.5rem); }
   .photo-title{ font-size:clamp(3rem,15vw,12rem); border-bottom:3px solid currentColor; padding-bottom:clamp(6px,1.2vh,16px); margin-bottom:clamp(30px,5vh,64px); }
-  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--fink,var(--ink)); background:var(--fbg,var(--bg)); border-top:1px solid var(--fbd,var(--ink)); padding:clamp(22px,4vh,56px) var(--pad) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,12.5vw,11rem); transition:color .3s ease, background .45s ease, border-color .45s ease; }
+  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--fink,var(--ink)); background:var(--fbg,var(--bg)); border-top:1px solid var(--fbd,var(--ink)); padding:clamp(22px,4vh,56px) clamp(8px,2vw,22px) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,12.5vw,11rem); transition:color .3s ease, background .45s ease, border-color .45s ease; }
   #mfoot:hover{ color:var(--facc,var(--acc)); }
+  #mfAtmos{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  #mfAtmos .loc-atmos{ position:absolute; inset:0; overflow:hidden; }
+  #mfAtmos .loc-atmos::before{ display:none; }
+  .mf-in{ position:relative; z-index:1; }
+  body.in-photo #view{ padding-bottom:0; }
   .mfoot-3{ display:none; }
   .mfoot-3 .mfl{ display:block; }
   .mfoot-3 .exp-in{ font-size:clamp(3rem,19vw,7rem); }
@@ -281,7 +286,7 @@
 
 <section id="view" hidden><div class="shell"><button id="backBtn">← Back</button><div id="viewBody"></div></div></section>
 
-<footer id="mfoot" role="button" tabindex="0" aria-label="Back to home"><span class="mfoot-1 exp-in" id="mfootIn">Justin Joonseo Choi</span><span class="mfoot-3"><span class="mfl"><span class="exp-in">Justin</span></span><span class="mfl"><span class="exp-in">Joonseo</span></span><span class="mfl"><span class="exp-in">Choi</span></span></span></footer>
+<footer id="mfoot" role="button" tabindex="0" aria-label="Back to home"><div id="mfAtmos" aria-hidden="true"><div class="loc-atmos"></div></div><div class="mf-in"><span class="mfoot-1 exp-in" id="mfootIn">Justin Joonseo Choi</span><span class="mfoot-3"><span class="mfl"><span class="exp-in">Justin</span></span><span class="mfl"><span class="exp-in">Joonseo</span></span><span class="mfl"><span class="exp-in">Choi</span></span></span></div></footer>
 
 <div id="wdrawer" hidden><div class="wd-scrim"></div><aside class="wd-panel" role="dialog" aria-modal="true"><button class="wd-x" id="wdX" aria-label="Close">✕</button><div id="wdBody"></div></aside></div>
 
@@ -660,10 +665,15 @@ const SITE = {
   let rt = 0;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(function () { measureHud(); refitTitles(); }, 160); });
   function themeFooter(id) {
-    const mf = $("mfoot"); if (!mf) return;
+    const mf = $("mfoot"), at = $("mfAtmos"); if (!mf) return;
     const L = (id === "photo" && SITE.locations && SITE.locations.length) ? SITE.locations[SITE.locations.length - 1] : null;
-    if (L) { mf.style.setProperty("--fbg", L.bg); mf.style.setProperty("--fink", L.ink); mf.style.setProperty("--facc", L.acc); mf.style.setProperty("--fbd", L.ink); }
-    else { mf.style.removeProperty("--fbg"); mf.style.removeProperty("--fink"); mf.style.removeProperty("--facc"); mf.style.removeProperty("--fbd"); }
+    if (L) {
+      mf.style.setProperty("--fbg", L.bg); mf.style.setProperty("--fink", L.ink); mf.style.setProperty("--facc", L.acc); mf.style.setProperty("--fbd", L.ink);
+      if (at) { at.className = "iss-" + L.key; at.style.cssText = "--lbg:" + L.bg + ";--link:" + L.ink + ";--ldim:" + L.ldim + ";--lacc:" + L.acc + ";"; }
+    } else {
+      mf.style.removeProperty("--fbg"); mf.style.removeProperty("--fink"); mf.style.removeProperty("--facc"); mf.style.removeProperty("--fbd");
+      if (at) { at.className = ""; at.style.cssText = ""; }
+    }
   }
   (function buildFooter() {
     const mf = $("mfoot"); if (!mf) return;
