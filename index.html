@@ -171,8 +171,8 @@
   .loc-cols.airy{ column-gap:clamp(12px,1.6vw,28px); }
   .loc-item{ break-inside:avoid; margin:0 0 clamp(8px,1vw,16px); }
   .loc-cols.airy .loc-item{ margin-bottom:clamp(26px,4vh,64px); }
-  .loc-cell{ display:block; width:100%; cursor:pointer; overflow:hidden; background:rgba(0,0,0,.06); }
-  .loc-cell img{ width:100%; height:auto; display:block; transition:opacity .3s ease; }
+  .loc-cell{ position:relative; display:block; width:100%; cursor:pointer; overflow:hidden; background:rgba(0,0,0,.06); aspect-ratio:4/5; }
+  .loc-cell img{ position:absolute; left:0; top:0; width:100%; height:auto; display:block; will-change:transform; transition:opacity .3s ease; }
   .loc-cell:hover img{ opacity:.9; }
   .loc-block{ display:flex; align-items:flex-end; min-height:clamp(150px,20vw,250px); padding:16px 18px; font-family:inherit; font-weight:800; font-size:clamp(15px,1.9vw,26px); line-height:1.04; letter-spacing:.01em; text-transform:uppercase; }
   .loc-block .bl-k{ display:block; font:600 10px/1.4 var(--mono); letter-spacing:.2em; opacity:.85; margin-bottom:8px; }
@@ -440,12 +440,27 @@ const SITE = {
   }
 
   let pnav = null, planeDir = "down", lastSY = 0;
-  function removePnav() { stopPhotoFont(); const o = doc.getElementById("pnav"); if (o && o.parentNode) o.parentNode.removeChild(o); pnav = null; }
+  let photoIO = null, photoVisible = null;
+  const REDUCE_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function photoParallax() {
+    if (current !== "photo" || !photoVisible || REDUCE_MOTION) return;
+    const vh = window.innerHeight || 800;
+    photoVisible.forEach(function (cell) {
+      const img = cell.querySelector("img"); if (!img) return;
+      const r = cell.getBoundingClientRect(); if (r.height <= 0) return;
+      const over = r.height * 0.176;
+      let p = (vh - r.top) / (vh + r.height); p = p < 0 ? 0 : (p > 1 ? 1 : p);
+      img.style.transform = "translate3d(0," + (-(p * over)).toFixed(1) + "px,0)";
+    });
+  }
+  function removePnav() { stopPhotoFont(); if (photoIO) { photoIO.disconnect(); photoIO = null; } photoVisible = null; const o = doc.getElementById("pnav"); if (o && o.parentNode) o.parentNode.removeChild(o); pnav = null; }
   function buildPhoto(box) {
     const l = el("div", "vlbl"); l.appendChild(el("span", "ix", numOf("photo"))); l.appendChild(el("span", "", "( photography · six issues, six places )")); box.appendChild(l);
     const ptitle = el("h2", "exp-title photo-title f-inter"); const ptin = el("span", "exp-in", "Photography"); ptitle.appendChild(ptin); box.appendChild(ptitle); fitSoon(ptin);
     stopPhotoFont(); (function () { let fi = 0, hover = false; ptitle.addEventListener("mouseenter", function () { hover = true; }); ptitle.addEventListener("mouseleave", function () { hover = false; }); photoFontTimer = setInterval(function () { if (hover) return; fi = (fi + 1) % PFONTS.length; ptitle.className = "exp-title photo-title " + PFONTS[fi]; fitWide(ptin); }, 200); })();
     const wrap = el("div", "locwrap");
+    photoVisible = new Set();
+    photoIO = ("IntersectionObserver" in window) ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) photoVisible.add(e.target); else photoVisible.delete(e.target); }); }, { rootMargin: "150px 0px" }) : null;
     const secEls = [];
     SITE.locations.forEach((L, li) => {
       const sec = el("section", "loc " + L.font + (L.extra ? " x-" + L.extra : ""));
@@ -465,7 +480,7 @@ const SITE = {
       for (let i = 0; i < photos.length; i++) {
         while (blocks.length && blocks[0].at === i) pushBlock(blocks.shift());
         const it = el("div", "loc-item");
-        const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; (function (item) { img.addEventListener("error", function () { if (item.parentNode) item.parentNode.removeChild(item); }); })(it); cell.appendChild(img);
+        const cell = el("div", "loc-cell"); const img = doc.createElement("img"); img.src = photos[i].src; img.alt = photos[i].label; img.loading = "lazy"; img.decoding = "async"; (function (item) { img.addEventListener("error", function () { if (item.parentNode) item.parentNode.removeChild(item); }); })(it); (function (c, m) { function setar() { if (m.naturalWidth) c.style.aspectRatio = m.naturalWidth + " / " + (m.naturalHeight * 0.85); } m.addEventListener("load", setar); if (m.complete) setar(); })(cell, img); if (photoIO) photoIO.observe(cell); cell.appendChild(img);
         cell.setAttribute("role", "button"); cell.setAttribute("aria-label", "Open " + photos[i].label);
         cell.addEventListener("click", function () { const cells = Array.prototype.slice.call(cols.querySelectorAll(".loc-cell")); const live = cells.map(function (c) { const im = c.querySelector("img"); return { src: im ? im.getAttribute("src") : "", label: im ? (im.alt || "") : "" }; }); const pos = cells.indexOf(cell); lbOpen(live, pos < 0 ? 0 : pos); });
         it.appendChild(cell); cols.appendChild(it);
@@ -597,7 +612,7 @@ const SITE = {
   } else { cur.classList.add("hide"); curDot.classList.add("hide"); }
 
   let rafId = 0, lastT = 0;
-  function loop(now) { rafId = 0; const dt = clamp(now - lastT, 0, 50); lastT = now; const mul = dt / 16.666; try { navTheme(); hudTick(mul); skillsParallax(); updatePnav(); } catch (e) {} if (!doc.hidden) rafId = requestAnimationFrame(loop); }
+  function loop(now) { rafId = 0; const dt = clamp(now - lastT, 0, 50); lastT = now; const mul = dt / 16.666; try { navTheme(); hudTick(mul); skillsParallax(); updatePnav(); photoParallax(); } catch (e) {} if (!doc.hidden) rafId = requestAnimationFrame(loop); }
   function ensureRaf() { if (!rafId && !doc.hidden) { lastT = performance.now(); rafId = requestAnimationFrame(loop); } }
   doc.addEventListener("visibilitychange", () => { if (!doc.hidden) ensureRaf(); });
   let rt = 0;
