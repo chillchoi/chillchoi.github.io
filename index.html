@@ -107,6 +107,8 @@
   .exp-title.f-garamond{ font-weight:500; } .exp-title.f-archivoblack{ font-weight:400; } .exp-title.f-mono{ font-weight:700; }
   .work-exp{ font-size:clamp(3rem,15.5vw,12.5rem); }
   .photo-title{ font-size:clamp(3rem,15vw,12rem); border-bottom:3px solid currentColor; padding-bottom:clamp(6px,1.2vh,16px); margin-bottom:clamp(30px,5vh,64px); }
+  #mfoot{ position:relative; z-index:2; display:block; width:100%; box-sizing:border-box; overflow:hidden; line-height:.78; text-transform:uppercase; font-weight:800; color:var(--ink); background:var(--bg); border-top:1px solid var(--ink); padding:clamp(22px,4vh,56px) var(--pad) clamp(26px,5vh,66px); cursor:pointer; font-size:clamp(2.2rem,13vw,11rem); transition:color .3s ease; }
+  #mfoot:hover{ color:var(--acc); }
 
   .wgrid{ display:grid; grid-template-columns:1fr; gap:clamp(18px,2.4vw,30px); }
   @media (min-width:820px){ .wgrid{ grid-template-columns:1fr 1fr; } }
@@ -274,6 +276,8 @@
 </main>
 
 <section id="view" hidden><div class="shell"><button id="backBtn">← Back</button><div id="viewBody"></div></div></section>
+
+<footer id="mfoot" role="button" tabindex="0" aria-label="Back to home"><span class="exp-in" id="mfootIn">Justin Joonseo Choi</span></footer>
 
 <div id="wdrawer" hidden><div class="wd-scrim"></div><aside class="wd-panel" role="dialog" aria-modal="true"><button class="wd-x" id="wdX" aria-label="Close">✕</button><div id="wdBody"></div></aside></div>
 
@@ -651,6 +655,19 @@ const SITE = {
   doc.addEventListener("visibilitychange", () => { if (!doc.hidden) ensureRaf(); });
   let rt = 0;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(function () { measureHud(); refitTitles(); }, 160); });
+  (function buildFooter() {
+    const mf = $("mfoot"), mfi = $("mfootIn");
+    if (!mf || !mfi) return;
+    let ffi = 0, fhover = false;
+    mf.addEventListener("mouseenter", function () { fhover = true; });
+    mf.addEventListener("mouseleave", function () { fhover = false; });
+    setInterval(function () { if (fhover) return; ffi = (ffi + 1) % PFONTS.length; mfi.className = "exp-in " + PFONTS[ffi]; fitWide(mfi); }, 200);
+    function goHome() { if (typeof location !== "undefined") location.hash = "#/"; window.scrollTo({ top: 0, behavior: "smooth" }); }
+    mf.addEventListener("click", goHome);
+    mf.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goHome(); } });
+    fitSoon(mfi);
+    window.addEventListener("resize", function () { fitWide(mfi); });
+  })();
 
   try {
     root.classList.add("booted");
