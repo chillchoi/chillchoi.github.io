@@ -77,11 +77,12 @@
   .sk-stage{ position:relative; min-height:min(96vh,1000px); }
   .sk-photo{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(58%,860px); height:72%; border:1px solid rgba(20,20,18,.5); overflow:hidden; z-index:1; will-change:transform; }
   .sk-photo img{ width:100%; height:100%; object-fit:cover; }
-  .sk-col{ position:absolute; z-index:2; display:flex; flex-direction:column; gap:.02em; mix-blend-mode:difference; color:#fff; font-weight:800; text-transform:uppercase; letter-spacing:-.03em; font-size:clamp(2.6rem,9vw,7rem); line-height:.96; }
+  .sk-col{ position:absolute; z-index:2; display:flex; flex-direction:column; gap:.02em; mix-blend-mode:difference; color:#fff; font-weight:800; text-transform:uppercase; letter-spacing:-.03em; font-size:clamp(0.9rem,4.2vw,4.6rem); line-height:.96; white-space:nowrap; max-width:54%; }
   .sk-left{ top:-2%; left:0; align-items:flex-start; }
   .sk-right{ bottom:-2%; right:0; text-align:right; align-items:flex-end; }
   .sk-tools{ position:relative; z-index:3; margin-top:clamp(28px,5vh,56px); padding-top:20px; border-top:1px solid var(--ink); font:500 12px/1.85 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
-  @media (max-width:760px){ .sk-photo{ width:84%; height:60%; } .sk-col{ font-size:clamp(1.7rem,10vw,3rem); } .sk-left{ top:0; } .sk-right{ bottom:0; } }
+  @media (max-width:760px){ .sk-photo{ width:88%; height:54%; } .sk-col{ font-size:clamp(0.8rem,4.4vw,2rem); } .sk-left{ top:0; } .sk-right{ bottom:0; } }
+  @media (max-width:420px){ .sk-col{ font-size:clamp(0.72rem,4.3vw,1.4rem); } .sk-photo{ width:92%; height:48%; } }
 
   #hfoot{ position:relative; z-index:2; background:var(--bg); display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:26px var(--pad); font:500 10px/1.8 var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--dim); }
   #hfoot a:hover{ color:var(--acc); }
@@ -538,7 +539,7 @@ const SITE = {
   }
   function closeView() {
     if (current === "") { setNav(); return; }
-    current = ""; pnav = null; stopPhotoFont(); body.classList.remove("viewing"); body.classList.remove("in-photo");
+    current = ""; removePnav(); body.classList.remove("viewing"); body.classList.remove("in-photo");
     view.hidden = true; home.hidden = false; viewBody.innerHTML = "";
     window.scrollTo(0, homeScroll); measureHud(); setNav(); ensureRaf();
   }
