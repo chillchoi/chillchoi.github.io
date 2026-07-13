@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Galaxy Passport</title>
+
+  <!-- Klleon SDK (v2 CDN, UMD 번들) -->
+  <script src="https://klleon.k1.klleon.io/2.0.0/klleon-sdk.umd.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f2a66;
+      --panel: rgba(255,255,255,0.10);
+      --border: rgba(255,255,255,0.18);
+      --text: #eef2f8;
+      --muted: #cdd8ee;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden; /* 키오스크형 화면: 스크롤 없음 */
+    }
+    body {
+      /* 3:4가 아닌 창(데스크톱 미리보기 등)에서 스테이지 밖을 채우는 배경 */
+      background: #05070c;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      height: 100dvh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---- 디버그: 현재 폴드 상태 배지 (실기기 테스트용) ---- */
+    #fold-badge {
+      position: absolute;
+      top: env(safe-area-inset-top, 8px);
+      right: 10px;
+      z-index: 50;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+    }
+
+    /* ---- 스테이지: 아바타가 보이는 화면 자체가 3:4(세로) 비율.
+       이 여권 모양 기기는 일반 폰보다 폭이 넓어, 화면 전체가 3:4 입니다.
+       (데스크톱 미리보기에서도 항상 3:4 박스로 렌더링되도록 고정) ---- */
+    #stage {
+      position: relative;
+      aspect-ratio: 3 / 4;
+      height: 100dvh;
+      width: min(100vw, calc(100dvh * 3 / 4));
+      max-height: 100dvh;
+      max-width: 100vw;
+      overflow: hidden;
+      /* 참고 이미지와 유사한 블루 라디얼 글로우 — 아바타 뒤쪽 배경 */
+      background:
+        radial-gradient(140% 70% at 50% 8%, #cfe4ff 0%, #8fc4ff 22%, #4f8cff 45%, #2453c9 68%, #0f2a66 100%);
+    }
+
+    /* 상태 뱃지(연결중 텍스트) */
+    #status-line {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 8px) + 34px);
+      left: 0;
+      right: 0;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      min-height: 16px;
+      z-index: 40;
+    }
+
+    /* 아바타 영상: 실제 스트림 비율(9:16) 고정, 스테이지 높이를 꽉 채움
+       → 머리부터 발끝까지 항상 온전히 보이고, 3:4 스테이지보다 좁은 만큼
+       남는 좌우 공간엔 위 블루 그라디언트가 그대로 비칩니다. */
+    avatar-container {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      height: 100%;
+      width: auto;
+      aspect-ratio: 9 / 16;
+      max-width: 100%;
+      transform: translateX(-50%) scale(0.9) translateY(12px);
+      opacity: 0;
+    }
+    /* 정중앙 등장 애니메이션 */
+    avatar-container.enter {
+      animation: avatarEnter 900ms cubic-bezier(.2,.8,.2,1) forwards;
+    }
+    @keyframes avatarEnter {
+      0%   { opacity: 0; transform: translateX(-50%) scale(0.86) translateY(24px); }
+      60%  { opacity: 1; transform: translateX(-50%) scale(1.02) translateY(-4px); }
+      100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+    }
+
+
+    /* ---- 오버레이 버블: 아바타 위(앞)에 겹쳐서 떠 있는 반투명 채팅 버블.
+       아바타를 별도 공간으로 밀어내지 않고, 그 위에 자연스럽게 겹칩니다. ---- */
+    #overlay-panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+      pointer-events: none; /* 자식 버튼에서 다시 켜짐 */
+    }
+
+    /* 인사말 버블 */
+    #greeting {
+      width: 100%;
+      background: rgba(20, 32, 64, 0.55);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    #greeting.show { opacity: 1; transform: translateY(0); }
+
+    /* 선택지 버블들 */
+    #choices {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .4s ease .1s, transform .4s ease .1s;
+      pointer-events: none;
+    }
+    #choices.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    button.choice {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(20,32,64,0.55);
+      backdrop-filter: blur(12px);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      padding: 12px 8px;
+      border-radius: 14px;
+      cursor: pointer;
+      text-align: center;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: border-color .15s, background .15s, transform .05s;
+    }
+    button.choice:active { transform: scale(0.97); }
+    button.choice:hover { border-color: var(--accent); }
+    button.choice span:first-child { white-space: normal; }
+    button.choice.primary {
+      background: linear-gradient(135deg, rgba(79,140,255,0.85), rgba(124,92,255,0.85));
+      border-color: transparent;
+    }
+    button.choice:disabled { opacity: .4; cursor: not-allowed; }
+
+    #selected-note {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      min-height: 16px;
+    }
+
+    /* =====================================================================
+       미션 1: 여권용 셀피 촬영 화면 (3~5단계)
+       ===================================================================== */
+    #selfie-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      flex-direction: column;
+      background: linear-gradient(180deg, #0a1a3f 0%, #05070c 100%);
+    }
+    #selfie-screen.show { display: flex; }
+
+    #selfie-header {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: calc(env(safe-area-inset-top, 8px) + 18px) 16px 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    #selfie-sub {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 4px;
+    }
+
+    #camera-area {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+    #camera-video, #photo-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #camera-video { transform: scaleX(-1); } /* 셀피 미러 */
+    #photo-canvas { display: none; }
+    #selfie-screen.captured #camera-video { display: none; }
+    #selfie-screen.captured #photo-canvas { display: block; }
+
+    /* 여권 사진 가이드(타원) + 주변 어둡게 */
+    #passport-guide {
+      position: absolute;
+      top: 48%;
+      left: 50%;
+      width: 62%;
+      aspect-ratio: 3 / 4;
+      transform: translate(-50%, -50%);
+      border: 3px dashed rgba(255,255,255,0.75);
+      border-radius: 50% / 42%;
+      box-shadow: 0 0 0 2000px rgba(5, 10, 25, 0.5);
+      pointer-events: none;
+    }
+    #selfie-screen.captured #passport-guide { display: none; }
+
+    #camera-error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 28px;
+      font-size: 13px;
+      color: #ffd4d1;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    #selfie-controls {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+    .shutter {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.18);
+      cursor: pointer;
+      transition: transform .05s;
+    }
+    .shutter:active { transform: scale(0.94); }
+
+    .pill-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform .05s, border-color .15s;
+    }
+    .pill-btn:active { transform: scale(0.97); }
+    .pill-btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+    }
+
+    /* 완성된 여권 카드 결과 (5단계) */
+    #passport-result {
+      position: absolute;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 24px;
+      background: rgba(5, 10, 25, 0.66);
+      backdrop-filter: blur(8px);
+    }
+    #passport-result.show { display: flex; animation: fadeIn .4s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .passport-card {
+      width: 80%;
+      max-width: 320px;
+      background: linear-gradient(160deg, #163a72, #0f2a5a);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 18px;
+      padding: 20px 18px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    }
+    .passport-card .pp-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #9fc0ff;
+      text-transform: uppercase;
+    }
+    .passport-card h3 { margin: 6px 0 14px; font-size: 17px; }
+    .passport-card .pp-photo {
+      width: 62%;
+      aspect-ratio: 3 / 4;
+      margin: 0 auto 16px;
+      display: block;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.45);
+      background: #000;
+    }
+
+    /* =====================================================================
+       6~8단계: 여행지 선택 / 파일럿 모드 / Fold 펼치기 유도
+       ===================================================================== */
+
+    /* 파일럿 모드 배지 (7단계) */
+    #pilot-badge {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 8px) + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 41;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, rgba(79,140,255,0.9), rgba(124,92,255,0.9));
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+    #pilot-badge.show { display: inline-flex; animation: fadeIn .4s ease; }
+
+    /* 여행지 선택 패널 (6단계) — 아바타 앞 하단 버블 */
+    #destination-panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+    #destination-panel.show { display: flex; }
+
+    #dest-title {
+      width: 100%;
+      background: rgba(20, 32, 64, 0.55);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    #dest-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    button.dest {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(20, 32, 64, 0.55);
+      backdrop-filter: blur(12px);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: border-color .15s, transform .05s, background .15s;
+    }
+    button.dest:active { transform: scale(0.96); }
+    button.dest:hover { border-color: var(--accent); }
+    button.dest .emoji { font-size: 24px; line-height: 1; }
+    button.dest.selected {
+      background: linear-gradient(135deg, rgba(79,140,255,0.9), rgba(124,92,255,0.9));
+      border-color: transparent;
+    }
+    button.dest:disabled { cursor: default; }
+    button.dest:disabled:not(.selected) { opacity: .4; }
+
+    /* Fold 펼치기 유도 오버레이 (8단계) */
+    #unfold-prompt {
+      position: absolute;
+      inset: 0;
+      z-index: 65;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 28px;
+      text-align: center;
+      background: radial-gradient(120% 80% at 50% 34%, rgba(24,54,128,0.9), rgba(5,10,25,0.95));
+      backdrop-filter: blur(4px);
+    }
+    #unfold-prompt.show { display: flex; animation: fadeIn .5s ease; }
+
+    /* 폴드가 펼쳐지는 애니메이션 */
+    .fold-anim {
+      width: 132px;
+      height: 168px;
+      display: flex;
+      perspective: 700px;
+    }
+    .fold-anim .leaf {
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(160deg, #2a4d99, #12305f);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .fold-anim .leaf.left {
+      border-radius: 12px 0 0 12px;
+      transform-origin: right center;
+      animation: unfoldLeaf 2s ease-in-out infinite;
+    }
+    .fold-anim .leaf.right {
+      border-radius: 0 12px 12px 0;
+      border-left: none;
+    }
+    @keyframes unfoldLeaf {
+      0%, 100% { transform: rotateY(-72deg); }
+      45%, 55% { transform: rotateY(0deg); }
+    }
+
+    #unfold-text { font-size: 19px; font-weight: 700; }
+    #unfold-sub { font-size: 13px; color: var(--muted); margin-top: -14px; }
+
+    /* =====================================================================
+       9~13단계: 와이드 영상 / 두 번째 셀피 / 최종 여권
+       ===================================================================== */
+
+    /* 9단계: 여행지 와이드 영상 (플레이스홀더 애니메이션) */
+    #dest-video {
+      position: absolute;
+      inset: 0;
+      z-index: 66;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: #fff;
+    }
+    #dest-video.show { display: flex; }
+    #dest-video .scene {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      animation: sceneZoom 4s ease-out forwards;
+    }
+    @keyframes sceneZoom { from { transform: scale(1.18); } to { transform: scale(1); } }
+    #dest-video .vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(120% 80% at 50% 42%, transparent 38%, rgba(0,0,0,0.6));
+    }
+    #dest-video .emoji-big {
+      position: relative;
+      font-size: 92px;
+      filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+      animation: floatY 3s ease-in-out infinite;
+    }
+    @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+    #dest-video .caption {
+      position: relative; margin-top: 14px;
+      font-size: 27px; font-weight: 800; letter-spacing: 1px;
+    }
+    #dest-video .sub { position: relative; margin-top: 6px; font-size: 13px; opacity: .85; }
+    #dest-video .progress {
+      position: absolute; bottom: 36px; left: 14%; right: 14%; height: 4px;
+      border-radius: 99px; background: rgba(255,255,255,0.25); overflow: hidden;
+    }
+    #dest-video .progress::after {
+      content: ''; position: absolute; inset: 0; background: #fff;
+      transform-origin: left; animation: progFill 3.5s linear forwards;
+    }
+    @keyframes progFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* 10단계: 두 번째 셀피 안내 하단 패널 */
+    #second-guide {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 31;
+      display: none; flex-direction: column; align-items: center; gap: 12px;
+      padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+    #second-guide.show { display: flex; }
+    #second-guide .bubble {
+      width: 100%; background: rgba(20,32,64,0.55); border: 1px solid var(--border);
+      border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.45;
+      text-align: center; backdrop-filter: blur(12px);
+    }
+
+    /* 11단계: 필터 셀피용 오버레이 (카메라 위) */
+    #filter-tint { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 2; }
+    #filter-sticker {
+      position: absolute; top: 12px; right: 14px; font-size: 36px; z-index: 3;
+      display: none; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.45));
+    }
+    #selfie-screen.filter-on #filter-tint,
+    #selfie-screen.filter-on #filter-sticker { display: block; }
+    #selfie-screen.captured #filter-tint,
+    #selfie-screen.captured #filter-sticker { display: none; }
+
+    /* 13단계: 최종 Galaxy Passport 카드 */
+    #final-passport {
+      position: absolute; inset: 0; z-index: 72; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; gap: 16px;
+      background: rgba(5,10,25,0.7); backdrop-filter: blur(8px); overflow-y: auto;
+    }
+    #final-passport.show { display: flex; animation: fadeIn .5s ease; }
+    .final-card {
+      width: 86%; max-width: 340px;
+      background: linear-gradient(160deg, #163a72, #0d2450);
+      border: 1px solid rgba(255,255,255,0.28); border-radius: 18px;
+      padding: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.55); text-align: center;
+    }
+    .final-card .fp-top {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+    }
+    .final-card .fp-brand { font-size: 11px; letter-spacing: 2px; color: #9fc0ff; }
+    .final-card .fp-flag { font-size: 22px; }
+    .final-card .fp-dest { font-size: 18px; font-weight: 800; margin: 2px 0; }
+    .final-card .fp-meta { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .final-card .fp-photos { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+    .final-card .fp-photos img {
+      width: 44%; aspect-ratio: 3/4; object-fit: cover; border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.4); background: #000;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="fold-badge">감지 중…</div>
+
+  <div id="stage">
+    <div id="status-line">연결 중…</div>
+
+    <!--
+      WARNING: 웰컴 메시지가 있는 아바타는 연결 즉시 재생되므로
+      avatar-container 는 init() 호출 전에 DOM에 있어야 합니다.
+    -->
+    <avatar-container id="avatar" volume="100" fit="cover"></avatar-container>
+
+    <!-- 아바타 위(앞)에 겹쳐지는 반투명 버블 -->
+    <div id="overlay-panel">
+      <div id="greeting"></div>
+
+      <div id="choices">
+        <button class="choice" id="choice-explain">
+          <span>기능 설명 듣기</span>
+        </button>
+        <button class="choice" id="choice-chat">
+          <span>자유 대화</span>
+        </button>
+        <button class="choice primary" id="choice-mission">
+          <span>상품 미션 참여</span>
+        </button>
+      </div>
+
+      <div id="selected-note"></div>
+    </div>
+
+    <!-- ===== 미션 1: 셀피 촬영 화면 (3~4단계) ===== -->
+    <div id="selfie-screen">
+      <div id="selfie-header">
+        <span id="selfie-title">나만의 Galaxy Passport</span>
+        <div id="selfie-sub">얼굴을 프레임 안에 맞추고 촬영하세요</div>
+      </div>
+      <div id="camera-area">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <canvas id="photo-canvas"></canvas>
+        <div id="filter-tint"></div>
+        <div id="filter-sticker"></div>
+        <div id="passport-guide"></div>
+        <div id="camera-error"></div>
+      </div>
+      <div id="selfie-controls">
+        <button class="shutter" id="btn-shutter" aria-label="촬영"></button>
+        <button class="pill-btn" id="btn-retake" style="display:none">다시 찍기</button>
+        <button class="pill-btn primary" id="btn-submit" style="display:none">제출하기</button>
+      </div>
+    </div>
+
+    <!-- ===== 여권 사진 완성 결과 (5단계) ===== -->
+    <div id="passport-result">
+      <div class="passport-card">
+        <div class="pp-label">Galaxy Passport</div>
+        <h3>여권 사진 완성 ✨</h3>
+        <img class="pp-photo" id="pp-photo" alt="여권 사진" />
+        <button class="pill-btn primary" id="btn-passport-done">다음 (여행지 선택)</button>
+      </div>
+    </div>
+
+    <!-- ===== 파일럿 모드 배지 (7단계) ===== -->
+    <div id="pilot-badge">✈️ 파일럿 모드</div>
+
+    <!-- ===== 여행지 선택 (6단계) ===== -->
+    <div id="destination-panel">
+      <div id="dest-title"></div>
+      <div id="dest-grid"></div>
+    </div>
+
+    <!-- ===== Fold 펼치기 유도 (8단계) ===== -->
+    <div id="unfold-prompt">
+      <div class="fold-anim">
+        <div class="leaf left"></div>
+        <div class="leaf right"></div>
+      </div>
+      <div id="unfold-text">Galaxy Fold를 펼쳐주세요</div>
+      <div id="unfold-sub">넓은 화면에서 여행이 시작됩니다 ✈️</div>
+      <button class="pill-btn" id="btn-unfold-sim" style="opacity:.6">펼쳤어요 (테스트용)</button>
+    </div>
+
+    <!-- ===== 9단계: 여행지 와이드 영상 (플레이스홀더) ===== -->
+    <div id="dest-video">
+      <div class="scene" id="dv-scene"></div>
+      <div class="vignette"></div>
+      <div class="emoji-big" id="dv-emoji">✈️</div>
+      <div class="caption" id="dv-caption"></div>
+      <div class="sub">고화질 여행 영상 재생 중…</div>
+      <div class="progress"></div>
+    </div>
+
+    <!-- ===== 10단계: 두 번째 셀피 안내 (디지털 휴먼 재등장) ===== -->
+    <div id="second-guide">
+      <div class="bubble" id="second-guide-text"></div>
+      <button class="pill-btn primary" id="btn-second-start">셀피 찍기 📸</button>
+    </div>
+
+    <!-- ===== 13단계: 최종 나만의 Galaxy Passport ===== -->
+    <div id="final-passport">
+      <div class="final-card">
+        <div class="fp-top">
+          <span class="fp-brand">GALAXY PASSPORT</span>
+          <span class="fp-flag" id="fp-flag"></span>
+        </div>
+        <div class="fp-dest" id="fp-dest"></div>
+        <div class="fp-meta" id="fp-meta"></div>
+        <div class="fp-photos">
+          <img id="fp-photo1" alt="여권 사진" />
+          <img id="fp-photo2" alt="필터 셀피" />
+        </div>
+        <button class="pill-btn primary" id="btn-final-done">완료 · 직원에게 보여주기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================================
+    //  설정값
+    // =====================================================================
+    const SDK_KEY   = "APP-RWd7FAiP3s9aduiTMSVA";
+    const AVATAR_ID = "c56abe6c-fd74-489d-977a-0e034fde7d41"; // 테스트 확인된 ID
+    const USE_ADLP  = true; // execution_type: "adlp_worker"
+
+    // 인사말 대신, H8 소개 + 미션 안내를 담은 짧은 버블 하나만 노출
+    const GREETING_TEXT = "안녕하세요! 저는 H8와 함께하는 여러분의 여행 메이트예요. 지금 바로 미션에 참여해보세요!";
+
+    // =====================================================================
+    const SDK = window.KlleonSDK;
+    const $ = (id) => document.getElementById(id);
+
+    const foldBadge   = $("fold-badge");
+    const avatarEl    = $("avatar");
+    const statusLine  = $("status-line");
+    const overlayPanel = $("overlay-panel");
+    const greetingEl  = $("greeting");
+    const choicesEl   = $("choices");
+    const selectedNote = $("selected-note");
+
+    const choiceExplain = $("choice-explain");
+    const choiceChat     = $("choice-chat");
+    const choiceMission  = $("choice-mission");
+
+    // 8단계에서 사용자가 기기를 펼치기를 기다리는 중인지 (early 선언: applyFoldState에서 참조)
+    let awaitingUnfold = false;
+
+    // ---- 폴드 상태 감지 (실기기: 힌지 각도 변화 시 뷰포트 리사이즈 발생) -----
+    // 접힘(폴디드) ≈ 4:3(가로/세로 0.75) / 펼침(언폴디드) ≈ 9:16(가로/세로 0.5625)
+    function detectFoldState() {
+      const ratio = window.innerWidth / window.innerHeight;
+      // 두 기준 비율의 중간값을 임계치로 사용
+      const threshold = (0.75 + 9 / 16) / 2; // ≈ 0.656
+      return ratio >= threshold ? "folded" : "unfolded";
+    }
+
+    function applyFoldState() {
+      const state = detectFoldState();
+      document.body.classList.toggle("folded", state === "folded");
+      document.body.classList.toggle("unfolded", state === "unfolded");
+      const ratio = (window.innerWidth / window.innerHeight).toFixed(3);
+      foldBadge.textContent =
+        (state === "folded" ? "📱 접힘 (4:3)" : "📖 펼침 (9:16)") + ` · ${ratio}`;
+
+      // 8단계: 펼치기 대기 중일 때 실제로 펼쳐지면 다음 단계로
+      if (state === "unfolded" && awaitingUnfold) onUnfolded();
+    }
+
+    window.addEventListener("resize", applyFoldState);
+    window.addEventListener("orientationchange", () => setTimeout(applyFoldState, 150));
+    applyFoldState();
+
+    // ---- SDK 이벤트 등록 (init 전에) ---------------------------------------
+    SDK.onStatus((status) => {
+      console.log("[STATUS]", status);
+      if (status === "CONNECTED_FINISH") {
+        statusLine.textContent = "";
+        onConnected();
+      } else if (status.includes("FAILED")) {
+        statusLine.textContent = "연결 실패: " + status;
+      } else {
+        statusLine.textContent = "연결 중… (" + status + ")";
+      }
+    });
+
+    SDK.onSignal((data) => {
+      console.log("[SIGNAL]", data.signal, data.payload || "");
+    });
+
+    SDK.onError((error) => {
+      console.error("[ERROR]", error.code, error.message);
+      statusLine.textContent = "에러: " + error.code;
+    });
+
+    // ---- 아바타 정중앙 등장 + 인사 + 선택지 노출 ----------------------------
+    function onConnected() {
+      avatarEl.classList.add("enter");
+
+      // 아바타 등장 애니메이션이 어느 정도 끝난 뒤 인사말 재생 + 노출
+      setTimeout(() => {
+        SDK.speak(GREETING_TEXT); // LLM 없이 고정 문구를 그대로 읽음
+        greetingEl.textContent = GREETING_TEXT;
+        greetingEl.classList.add("show");
+      }, 500);
+
+      // 선택지는 인사말 직후 노출 (버튼 또는 추후 음성/텍스트로도 선택 가능)
+      setTimeout(() => {
+        choicesEl.classList.add("show");
+      }, 900);
+    }
+
+    // ---- 선택지 핸들러 (1단계 범위: 선택 결과만 반영, 이후 미션 로직은 다음 단계) --
+    function selectChoice(label, spokenReply) {
+      selectedNote.textContent = "선택됨 → " + label;
+      [choiceExplain, choiceChat, choiceMission].forEach((b) => (b.disabled = true));
+      safeSpeak(spokenReply);
+    }
+
+    choiceExplain.addEventListener("click", () => {
+      selectChoice(
+        "기능 설명 듣기",
+        "네, 저는 여러분의 여행을 도와드리는 디지털 휴먼이에요. " +
+          "셀피를 찍어 나만의 Galaxy Passport를 만들고, 원하는 여행지를 골라 특별한 경험을 해보실 수 있어요."
+      );
+    });
+
+    choiceChat.addEventListener("click", () => {
+      selectChoice("자유 대화", "좋아요! 편하게 무엇이든 물어보세요.");
+      // TODO: 다음 단계에서 <chat-container> 또는 텍스트 입력 UI 노출
+    });
+
+    choiceMission.addEventListener("click", () => {
+      selectedNote.textContent = "선택됨 → 상품 미션 참여";
+      [choiceExplain, choiceChat, choiceMission].forEach((b) => (b.disabled = true));
+      startSelfieMission();
+    });
+
+    // =====================================================================
+    //  미션 1: 여권용 셀피 촬영 플로우 (3~5단계)
+    // =====================================================================
+    const selfieScreen    = $("selfie-screen");
+    const cameraVideo     = $("camera-video");
+    const photoCanvas     = $("photo-canvas");
+    const cameraError     = $("camera-error");
+    const btnShutter      = $("btn-shutter");
+    const btnRetake       = $("btn-retake");
+    const btnSubmit       = $("btn-submit");
+    const passportResult  = $("passport-result");
+    const ppPhoto         = $("pp-photo");
+    const btnPassportDone = $("btn-passport-done");
+
+    let cameraStream = null;
+    let capturedDataUrl = null;
+    let selfieMode = "first";          // 'first'(여권 사진) | 'second'(필터 셀피)
+    let firstSelfieDataUrl = null;     // 4단계 여권 사진
+    let secondSelfieDataUrl = null;    // 11단계 필터 셀피
+
+    // speak 호출이 실패해도 UI 흐름이 멈추지 않도록 감쌈
+    function safeSpeak(text) {
+      try { SDK.speak(text); } catch (e) { console.warn("speak 실패:", e); }
+    }
+
+    // 3단계: 카메라 화면 먼저 열고 → 안내 멘트 재생
+    async function startSelfieMission() {
+      overlayPanel.style.display = "none"; // 최초 인사/선택지 패널은 이후로 숨김
+      selfieMode = "first";
+      cameraVideo.style.filter = "";
+      selfieScreen.classList.remove("captured", "filter-on");
+      $("selfie-title").textContent = "나만의 Galaxy Passport";
+      $("selfie-sub").textContent = "얼굴을 프레임 안에 맞추고 촬영하세요";
+      setCaptureMode(false);
+      selfieScreen.classList.add("show");
+      safeSpeak("나만의 Galaxy Passport를 만들기 위해 셀피를 찍어주세요.");
+      await startCamera();
+    }
+
+    async function startCamera() {
+      cameraError.style.display = "none";
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 1080 }, height: { ideal: 1440 } },
+          audio: false,
+        });
+        cameraVideo.srcObject = cameraStream;
+      } catch (e) {
+        console.error("카메라 접근 실패:", e);
+        cameraError.style.display = "flex";
+        cameraError.textContent =
+          "카메라를 사용할 수 없습니다. (" + e.name + ")\n\n" +
+          "· 브라우저 카메라 권한을 허용했는지 확인해주세요.\n" +
+          "· https 또는 localhost 환경에서만 카메라가 동작합니다.";
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((t) => t.stop());
+        cameraStream = null;
+      }
+      cameraVideo.srcObject = null;
+    }
+
+    function setCaptureMode(captured) {
+      btnShutter.style.display = captured ? "none" : "";
+      btnRetake.style.display  = captured ? "" : "none";
+      btnSubmit.style.display  = captured ? "" : "none";
+    }
+
+    // 촬영: 현재 프레임을 캔버스에 저장 (셀피 미러와 동일하게 좌우 반전)
+    btnShutter.addEventListener("click", () => {
+      const vw = cameraVideo.videoWidth, vh = cameraVideo.videoHeight;
+      // 카메라가 실제 프레임을 그리기 전(검은 화면)에는 촬영하지 않음
+      if (!vw || !vh || cameraVideo.readyState < 2) return;
+      photoCanvas.width = vw;
+      photoCanvas.height = vh;
+      const ctx = photoCanvas.getContext("2d");
+      const theme = selfieMode === "second"
+        ? (DEST_THEME[selectedDestination.id] || {}) : {};
+
+      ctx.save();
+      if (theme.filter) ctx.filter = theme.filter;   // 필터 셀피면 색보정 반영
+      ctx.scale(-1, 1);
+      ctx.drawImage(cameraVideo, -vw, 0, vw, vh);
+      ctx.restore();
+
+      // 필터 셀피: 테마 틴트 + 스티커도 사진에 합성
+      if (selfieMode === "second") {
+        if (theme.tint) { ctx.fillStyle = theme.tint; ctx.fillRect(0, 0, vw, vh); }
+        if (theme.sticker) {
+          ctx.font = Math.round(vw * 0.13) + "px serif";
+          ctx.textBaseline = "top";
+          ctx.fillText(theme.sticker, vw * 0.72, vh * 0.04);
+        }
+      }
+
+      capturedDataUrl = photoCanvas.toDataURL("image/png");
+      selfieScreen.classList.add("captured");
+      setCaptureMode(true);
+    });
+
+    // 다시 찍기
+    btnRetake.addEventListener("click", () => {
+      selfieScreen.classList.remove("captured");
+      setCaptureMode(false);
+    });
+
+    // 제출 → 첫 번째면 5단계(여권 사진 승인), 두 번째면 12단계(미션 완료)
+    btnSubmit.addEventListener("click", () => {
+      stopCamera();
+      selfieScreen.classList.remove("show");
+      if (selfieMode === "first") {
+        firstSelfieDataUrl = capturedDataUrl;
+        ppPhoto.src = capturedDataUrl;
+        passportResult.classList.add("show");
+        safeSpeak("좋아요! 여권 사진이 완성됐어요.");
+      } else {
+        secondSelfieDataUrl = capturedDataUrl;
+        selfieScreen.classList.remove("filter-on");
+        cameraVideo.style.filter = "";
+        completeMission();
+      }
+    });
+
+    // 여권 완성 → 6단계 여행지 선택으로 전환
+    btnPassportDone.addEventListener("click", () => {
+      passportResult.classList.remove("show");
+      showDestinations();
+    });
+
+    // =====================================================================
+    //  6~8단계: 여행지 선택 → 파일럿 모드 → Fold 펼치기 유도
+    // =====================================================================
+    const DESTINATIONS = [
+      { id: "paris",   emoji: "🗼", name: "파리" },
+      { id: "newyork", emoji: "🗽", name: "뉴욕" },
+      { id: "tokyo",   emoji: "🗾", name: "도쿄" },
+      { id: "bali",    emoji: "🏝️", name: "발리" },
+      { id: "dubai",   emoji: "🕌", name: "두바이" },
+      { id: "rome",    emoji: "🏛️", name: "로마" },
+    ];
+
+    const destinationPanel = $("destination-panel");
+    const destTitle = $("dest-title");
+    const destGrid  = $("dest-grid");
+    const pilotBadge = $("pilot-badge");
+    const unfoldPrompt = $("unfold-prompt");
+    const btnUnfoldSim = $("btn-unfold-sim");
+
+    let selectedDestination = null;
+
+    // 6단계: 여행지 선택 버블 표시 (승무원 톤 안내)
+    function showDestinations() {
+      destTitle.textContent = "탑승을 환영합니다 ✈️ 오늘은 어디로 모실까요?";
+      destGrid.innerHTML = "";
+      DESTINATIONS.forEach((d) => {
+        const b = document.createElement("button");
+        b.className = "dest";
+        b.type = "button";
+        b.innerHTML =
+          '<span class="emoji">' + d.emoji + '</span><span>' + d.name + "</span>";
+        b.addEventListener("click", () => onDestinationSelected(d, b));
+        destGrid.appendChild(b);
+      });
+      destinationPanel.classList.add("show");
+      safeSpeak("탑승을 환영합니다. 오늘은 어디로 모실까요? 가고 싶은 여행지를 골라주세요.");
+    }
+
+    // 7단계: 여행지 선택 완료 → 파일럿 모드 전환
+    function onDestinationSelected(dest, btn) {
+      selectedDestination = dest;
+      destGrid.querySelectorAll("button.dest").forEach((b) => {
+        b.disabled = true;
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      pilotBadge.classList.add("show"); // 파일럿 모드 배지 ON
+      destTitle.textContent = "좋아요, " + dest.name + "(으)로 출발해볼게요! ✈️";
+      safeSpeak(
+        "좋아요, " + dest.name + "(으)로 출발해볼게요! 저는 오늘 여러분을 모실 파일럿입니다. " +
+        "좌석에 앉아 안전벨트를 매주세요. 잠시 후 이륙하겠습니다."
+      );
+      // 잠시 후 8단계(펼치기 유도)로 전환
+      setTimeout(showUnfoldPrompt, 3000);
+    }
+
+    // 8단계: Fold 펼치기 유도
+    function showUnfoldPrompt() {
+      destinationPanel.classList.remove("show");
+      unfoldPrompt.classList.add("show");
+      awaitingUnfold = true;
+      safeSpeak("이제 이륙 준비가 끝났어요. Galaxy Fold를 펼쳐주세요. 넓은 창밖으로 여행이 시작됩니다!");
+    }
+
+    // 사용자가 기기를 펼치면(또는 테스트 버튼) → 9단계 영상 재생
+    function onUnfolded() {
+      if (!awaitingUnfold) return;
+      awaitingUnfold = false;
+      unfoldPrompt.classList.remove("show");
+      playDestinationVideo();
+    }
+
+    btnUnfoldSim.addEventListener("click", onUnfolded);
+
+    // =====================================================================
+    //  9~13단계: 와이드 영상 → 두 번째 셀피 → 미션 완료 → 최종 여권 생성
+    // =====================================================================
+    // 여행지별 테마 (영상 배경 / 셀피 필터 / 틴트 / 스티커)
+    const DEST_THEME = {
+      paris:   { scene: "linear-gradient(160deg,#f7c8d8,#b57bd6,#5b3a8c)", filter: "saturate(1.1) contrast(1.05) sepia(0.12)", tint: "rgba(255,170,200,0.16)", sticker: "🗼" },
+      newyork: { scene: "linear-gradient(160deg,#2c3e6b,#6b7bb0,#c9a86a)", filter: "contrast(1.15) brightness(1.05)",          tint: "rgba(120,150,255,0.14)", sticker: "🗽" },
+      tokyo:   { scene: "linear-gradient(160deg,#ffd1e8,#ff7fb0,#7a4dff)", filter: "saturate(1.3)",                            tint: "rgba(255,120,180,0.16)", sticker: "🌸" },
+      bali:    { scene: "linear-gradient(160deg,#7ff0c8,#2bb0a0,#0a6e6e)", filter: "saturate(1.4) brightness(1.06)",           tint: "rgba(0,200,150,0.14)",   sticker: "🌴" },
+      dubai:   { scene: "linear-gradient(160deg,#ffe1a0,#e0a850,#8a5a1e)", filter: "sepia(0.3) saturate(1.2)",                 tint: "rgba(255,200,90,0.18)",  sticker: "🕌" },
+      rome:    { scene: "linear-gradient(160deg,#f0dcc0,#c8a06a,#7a5a34)", filter: "sepia(0.22) contrast(1.08)",               tint: "rgba(220,180,120,0.18)", sticker: "🏛️" },
+    };
+
+    const destVideo       = $("dest-video");
+    const dvScene         = $("dv-scene");
+    const dvEmoji         = $("dv-emoji");
+    const dvCaption       = $("dv-caption");
+    const secondGuide     = $("second-guide");
+    const secondGuideText = $("second-guide-text");
+    const btnSecondStart  = $("btn-second-start");
+    const filterTint      = $("filter-tint");
+    const filterSticker   = $("filter-sticker");
+    const finalPassport   = $("final-passport");
+
+    // 9단계: 여행지 와이드 영상 (플레이스홀더, 3.5초)
+    function playDestinationVideo() {
+      const t = DEST_THEME[selectedDestination.id] || {};
+      dvScene.style.background = t.scene || "linear-gradient(160deg,#2a4d99,#12305f)";
+      dvEmoji.textContent = t.sticker || "✈️";
+      dvCaption.textContent = selectedDestination.name;
+      destVideo.classList.add("show");
+      safeSpeak(selectedDestination.name + "의 아름다운 풍경을 감상해보세요!");
+      setTimeout(() => {
+        destVideo.classList.remove("show");
+        guideSecondSelfie();
+      }, 3500);
+    }
+
+    // 10단계: 디지털 휴먼 재등장 → 필터 셀피 안내
+    function guideSecondSelfie() {
+      secondGuideText.textContent =
+        "멋진 여행이었죠? 이번엔 " + selectedDestination.name + " 테마 필터로 셀피를 찍어볼까요?";
+      secondGuide.classList.add("show");
+      safeSpeak("멋진 여행이었죠? 이번엔 " + selectedDestination.name + " 테마 필터를 적용해서 셀피를 찍어볼까요?");
+    }
+
+    btnSecondStart.addEventListener("click", () => {
+      secondGuide.classList.remove("show");
+      startSecondSelfie();
+    });
+
+    // 11단계: 여행지 필터 셀피 촬영 (카메라 화면 재사용 + 필터)
+    async function startSecondSelfie() {
+      selfieMode = "second";
+      const t = DEST_THEME[selectedDestination.id] || {};
+      cameraVideo.style.filter = t.filter || "";
+      filterTint.style.background = t.tint || "transparent";
+      filterSticker.textContent = t.sticker || "";
+      $("selfie-title").textContent = selectedDestination.name + " 테마 셀피";
+      $("selfie-sub").textContent = selectedDestination.name + " 필터가 적용됐어요 ✨";
+      selfieScreen.classList.remove("captured");
+      selfieScreen.classList.add("filter-on");
+      setCaptureMode(false);
+      selfieScreen.classList.add("show");
+      await startCamera();
+    }
+
+    // 12단계: 미션 완료 축하 + 13단계: 최종 여권 생성
+    function completeMission() {
+      const t = DEST_THEME[selectedDestination.id] || {};
+      $("fp-flag").textContent = t.sticker || "✈️";
+      $("fp-dest").textContent = selectedDestination.name;
+      $("fp-meta").textContent = "여행 테마 · " + selectedDestination.name + " ✈️";
+      $("fp-photo1").src = firstSelfieDataUrl || "";
+      $("fp-photo2").src = secondSelfieDataUrl || "";
+      finalPassport.classList.add("show");
+      safeSpeak("와, 정말 멋져요! 미션을 모두 완료했어요. 축하합니다! 나만의 Galaxy Passport가 완성됐어요.");
+    }
+
+    // 14~15단계 안내(직원 제시 → 상품 수령)
+    $("btn-final-done").addEventListener("click", () => {
+      finalPassport.classList.remove("show");
+      safeSpeak("완성된 Galaxy Passport를 매장 직원에게 보여주세요. 선물이 준비되어 있어요!");
+    });
+
+    // ---- 초기화 -------------------------------------------------------------
+    async function connect() {
+      const initOptions = {
+        sdk_key: SDK_KEY,
+        avatar_id: AVATAR_ID,
+        log_level: "debug",
+        language: "ko_kr",
+      };
+      if (USE_ADLP) initOptions.execution_type = "adlp_worker";
+
+      try {
+        await SDK.init(initOptions);
+      } catch (e) {
+        console.error("init 실패:", e.message);
+        statusLine.textContent = "연결 실패: " + e.message;
+      }
+    }
+
+    window.addEventListener("beforeunload", () => {
+      SDK.destroy();
+    });
+
+    connect();
+  </script>
+</body>
+</html>

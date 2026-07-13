@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Galaxy Passport · Adventure</title>
+<script src="https://klleon.k1.klleon.io/2.0.0/klleon-sdk.umd.js"></script>
+<style>
+/* ============================================================
+   GALAXY PASSPORT — V2 Adventure Experience
+   Design tokens · Folded/Cover screen (10:16 portrait) / Unfolded/Main screen (4:3 landscape)
+   ============================================================ */
+:root{
+  --gold:#ffd77a; --gold-deep:#e9b84e; --pp-navy:#3646a6;
+  --ink:#eef1ff; --muted:#c2b8ee;
+  --glass:rgba(48,36,96,.40); --glass-strong:rgba(40,30,84,.62);
+  --border:rgba(200,180,255,.28);
+  --accent:#6b7cff; --accent2:#b06bff;   /* blue → purple */
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.25,1.4,.5,1);
+  --sky1:#0b0a26; --sky2:#191347;
+  /* ---- AVATAR FRAMING — TUNE while watching the LIVE avatar on :9292 (it can't render in the sandbox).
+     The whole app now renders 4:3 UNFOLD, so only the unfold knobs matter:
+       --av-unfold-x : where the guide sits (50% = centre, higher = further RIGHT / off the crease)
+       --av-unfold-scale : zoom (below 1 = smaller / more of them visible)
+     If she's cut on the RIGHT edge, LOWER --av-unfold-x. If too far into the empty left, raise it. */
+  --av-unfold-x:52%;                 --av-unfold-scale:1;  /* clamped in JS so the avatar is NEVER cut, whatever this is */
+  --av-fold-x:42%;  --av-fold-y:0%;  --av-fold-scale:1;   /* (fold mode disabled — unused) */
+  /* H8 hardware camera cutout — near top; fold=center, unfold=75% from left.
+     NOT drawn; --safe-top keeps top UI clear of the lens. */
+  --cam-y:9px; --cam-r:16px; --safe-top:46px;
+  /* Galaxy bottom app-bar clips ~2mm of the bottom in both modes — reserve it. */
+  --safe-bottom:24px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#04060e;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color:var(--ink);user-select:none}
+body{display:flex;align-items:center;justify-content:center}
+
+/* ---- STAGE : the H8 device screen.  Folded(cover)=10:16 portrait,  Unfolded(main)=4:3 landscape ---- */
+#stage{position:relative;overflow:hidden;-webkit-perspective:760px;perspective:760px;perspective-origin:50% 45%;
+  background:radial-gradient(150% 90% at 50% 4%, #2a1f66 0%, var(--sky2) 40%, var(--sky1) 100%);
+  transition:width .5s var(--ease), height .5s var(--ease);}
+body.mode-fold #stage{aspect-ratio:10/16;height:100dvh;width:min(100vw,calc(100dvh*10/16));}
+body.mode-wide #stage{aspect-ratio:4/3;width:min(100vw,calc(100dvh*4/3));height:min(100dvh,calc(100vw*3/4));}
+
+/* aurora / ambient environment behind everything */
+#environment{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#environment .aurora{position:absolute;inset:-20%;opacity:.55;filter:blur(44px);
+  background:conic-gradient(from 0deg at 50% 40%, #3a4bd0, #8a4dff, #b06bff, #4a3ccc, #3a4bd0);
+  animation:spin 46s linear infinite;transition:opacity 1s}
+@keyframes spin{to{transform:rotate(360deg)}}
+#environment .glowtop{position:absolute;top:-30%;left:50%;transform:translateX(-50%);
+  width:120%;height:70%;background:radial-gradient(closest-side, rgba(150,190,255,.35), transparent);}
+
+/* ---- FX canvas (particles) ---- */
+#fx{position:absolute;inset:0;z-index:35;pointer-events:none}
+
+/* ---- AVATAR LAYER : one stream, three framings ---- */
+#avatar-layer{position:absolute;z-index:10;transition:all .6s var(--ease);will-change:transform,width,height}
+avatar-container{display:block;width:100%;height:100%;background:transparent;border-radius:inherit;overflow:hidden}
+/* portal: hero card, center */
+.frame-portal #avatar-layer{left:50%;top:50%;transform:translate(-50%,-50%);
+  height:86%;width:auto;aspect-ratio:9/16;border-radius:26px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.14),0 30px 80px rgba(0,0,0,.5),0 0 60px rgba(90,140,255,.25);}
+/* stage: guide layer — sizeAvatar() sets precise px to the stream's NATIVE aspect (no crop);
+   the CSS here is just a pre-measurement fallback so it's never zero-sized. */
+.frame-stage #avatar-layer{top:0;height:100%;width:auto;aspect-ratio:var(--av-aspect,9/16);border-radius:0;}
+/* FOLD (10:16 cover): re-centre the guide on THIS avatar so they aren't cropped/shoved to a corner */
+body.mode-fold.frame-stage #avatar-layer{left:var(--av-fold-x);top:var(--av-fold-y);
+  transform:translateX(-50%) scale(var(--av-fold-scale));transform-origin:center top;}
+/* UNFOLD (4:3 main): guide sits on the RIGHT, clear of the device's centre crease */
+body.mode-wide.frame-stage #avatar-layer{left:var(--av-unfold-x);
+  transform:translateX(-50%) scale(var(--av-unfold-scale));transform-origin:center center;}
+/* medallion: corner circle */
+.frame-medallion #avatar-layer{left:16px;bottom:16px;top:auto;transform:none;
+  height:132px;width:132px;border-radius:50%;overflow:hidden;
+  box-shadow:0 0 0 2px var(--gold),0 10px 30px rgba(0,0,0,.5);}
+.frame-medallion avatar-container{aspect-ratio:1/1;transform:scale(1.7) translateY(-15%);}
+body.mode-wide.frame-medallion #avatar-layer{height:150px;width:150px}
+/* speaking glow */
+#avatar-layer.speaking{box-shadow:0 0 0 1px rgba(255,255,255,.2),0 30px 80px rgba(0,0,0,.5),0 0 90px rgba(120,170,255,.55)!important}
+
+/* ---- SCENE ROOT ---- */
+#scene{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;padding:0}
+
+/* ---- GLASS BUBBLE (all choices / CTAs) ---- */
+.bubble{position:relative;overflow:hidden;border:1px solid transparent;
+  background:linear-gradient(135deg,#6a5fd0,#3a2c80);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-radius:26px;padding:16px 24px;color:var(--ink);font-weight:700;font-size:15px;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -8px 22px rgba(60,40,140,.35),0 12px 34px rgba(20,10,60,.45),0 0 24px rgba(150,110,255,.28);
+  transition:transform .15s var(--spring),box-shadow .2s,border-color .2s;
+  animation:floaty 3.4s var(--ease) infinite;}
+/* top glass glare */
+.bubble::before{content:"";position:absolute;left:6%;right:6%;top:4px;height:42%;border-radius:22px 22px 40% 40%;
+  background:linear-gradient(rgba(255,255,255,.42),rgba(255,255,255,0));pointer-events:none;opacity:.85}
+/* moving specular sweep */
+.bubble::after{content:"";position:absolute;top:-60%;left:-30%;width:40%;height:220%;transform:rotate(18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  filter:blur(3px);pointer-events:none;animation:glare 4.5s ease-in-out infinite}
+@keyframes glare{0%,60%{left:-40%}80%,100%{left:130%}}
+.bubble:hover{border-color:rgba(220,200,255,.6)}
+.bubble:active{transform:scale(.95)}
+.bubble.primary{background:linear-gradient(135deg,#6b7cff,#b06bff);border-color:transparent;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 40px rgba(150,110,255,.6),0 12px 34px rgba(30,10,80,.5)}
+.bubble .ico{font-size:22px}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.bubble.pulse{animation:floaty 3.4s var(--ease) infinite, pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 56px rgba(176,120,255,.85),0 12px 34px rgba(30,10,80,.5)}}
+/* magic pop-in (overshoot + blur clear) */
+@keyframes bubblePop{0%{opacity:0;transform:scale(.2) translateY(24px);filter:blur(6px)}
+  55%{opacity:1;transform:scale(1.14) translateY(-6px);filter:blur(0)}
+  75%{transform:scale(.96)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.bubble.pop{animation:bubblePop .62s var(--spring) both, floaty 3.4s var(--ease) .62s infinite}
+
+/* speech caption bubble */
+#say{position:absolute;left:50%;bottom:calc(20px + var(--safe-bottom));transform:translateX(-50%) translateY(10px);
+  z-index:30;width:max-content;max-width:82%;text-align:center;font-size:15px;line-height:1.5;font-weight:600;
+  padding:14px 20px;border-radius:20px;background:var(--glass-strong);border:1px solid var(--border);
+  backdrop-filter:blur(14px);opacity:0;transition:opacity .35s,transform .35s;pointer-events:none}
+#say.show{opacity:1;transform:translateX(-50%) translateY(0)}
+body.mode-wide #say{bottom:calc(26px + var(--safe-bottom));font-size:17px;max-width:64%}
+
+/* generic centered stack for scene content */
+.panel{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;
+  align-items:center;gap:12px;padding:20px 18px calc(24px + var(--safe-bottom) + env(safe-area-inset-bottom,0));
+  z-index:25}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+/* cluster floats near the guide's hands (mid-lower), inside the 10:16 fold boundary */
+.cluster{position:absolute;left:50%;top:63%;transform:translate(-50%,-50%);z-index:25;
+  display:flex;flex-direction:row;align-items:stretch;justify-content:center;gap:14px;width:92%;max-width:92%}
+.cluster .bubble{flex:1;font-size:16px;padding:22px 14px;flex-direction:column;gap:8px;text-align:center;line-height:1.3;border-radius:30px}
+.cluster .bubble .ico{font-size:38px}
+
+/* ============ BOOT / SPLASH ============ */
+#splash{position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;background:radial-gradient(circle at 50% 40%,#0d1f4d,#04060e);
+  transition:opacity .6s}
+#splash.hide{opacity:0;pointer-events:none}
+#splash .logo{font-size:22px;font-weight:800;letter-spacing:3px;
+  background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+#splash .tag{font-size:13px;color:var(--muted);letter-spacing:1px}
+#splash .ring{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.15);
+  border-top-color:var(--gold);animation:spin 1s linear infinite}
+
+/* ============ IDLE ATTRACT ============ */
+#title-lockup{position:absolute;bottom:21%;left:50%;transform:translateX(-50%);z-index:25;text-align:center;
+  transition:opacity .5s}
+#title-lockup .t1{font-size:13px;letter-spacing:6px;color:var(--gold);font-weight:700}
+#title-lockup .t2{font-size:30px;font-weight:800;letter-spacing:1px;margin-top:2px;
+  text-shadow:0 4px 30px rgba(120,150,255,.5)}
+/* ===== FOLD PHASE: the folded device shows only its COVER = the RIGHT half. So every BUTTON/GRAPHIC
+   sits at the right-centre (75%), inside the right half. The digital human is the FIXED BACKGROUND — never moved. ===== */
+/* stack: DIALOGUE above BUTTONS; buttons lifted well clear of the bottom bezel */
+body.phase-fold .panel{left:50%;right:0;bottom:13%;align-items:center}                   /* CTA button → lifted above the bezel */
+body.phase-fold .cluster{left:75%;bottom:13%;top:auto;transform:translateX(-50%);width:48%;max-width:48%}   /* choice buttons → lifted, side-by-side */
+body.phase-fold #say{left:75%;max-width:44%;bottom:29%}                                   /* dialogue → ABOVE the buttons */
+/* whenever the passport is on screen, the dialogue ALWAYS moves BELOW it (never covers the face) */
+body.phase-fold:has(#passport.show) #say{bottom:7%;top:auto}
+/* destination spheres on screen → dialogue drops BELOW the whole orbit (never collides with a sphere) */
+body.phase-fold:has(.orb) #say{bottom:5%;top:auto;max-width:56%}
+body.phase-fold #passport{left:75%;top:64%}   /* fold = cover screen: passport in the RIGHT half, LOWER — clear of her neck, sits below her chest */
+body.phase-fold #cam-wrap{left:50%}
+body.phase-fold #count{left:75%;top:52%}           /* countdown 3·2·1 → right-centre, below the face */
+body.phase-fold #warp .lines{left:75%}             /* warp streaks radiate from behind the guide (right) */
+body.phase-fold #splash{padding-left:50%}          /* loading sign → right-centre (75%) */
+/* ===== UNFOLD PHASE = full width; passport parks LEFT (pp-split), captions centred ===== */
+body.phase-unfold #say{left:50%;max-width:58%}
+body.pp-split #say{left:72%;max-width:40%}   /* passport floats on the LEFT → dialogue moves RIGHT, avoiding it */
+
+/* ============ PASSPORT — real 3D thick book ============ */
+#passport{position:absolute;z-index:45;left:50%;top:50%;
+  width:var(--ppw,260px);height:var(--pph,347px);--thick:24px;
+  transform:translate(-50%,-50%);
+  /* #passport itself never rotates (only .pp-cube does), so it doesn't need its own 3D context.
+     It DOES give .pp-cube a fresh, LOCAL perspective — instead of relying on that perspective being
+     correctly forwarded down from #stage through a chain of ancestors, which some browser engines
+     flatten/mis-render when a 3D context is nested two levels deep. This was very likely why the
+     passport still looked flat at some viewing angles on the real device. */
+  -webkit-perspective:1050px; perspective:1050px; perspective-origin:50% 45%;
+  opacity:0;pointer-events:none;color:#fff;
+  transition:opacity .6s var(--ease)}
+/* the passport is ONE solid 3D block. This is the ONLY element in the whole passport that rotates,
+   and the ONLY element with transform-style:preserve-3d — a single, unambiguous 3D context.
+   The glow lives OUTSIDE it (above, as a sibling), pinned flat behind, so nothing pokes in front of the edges.
+   -webkit- prefixes throughout this block are load-bearing on some Android WebViews (e.g. the one the
+   Klleon SDK likely embeds) that still need them even though unprefixed works fine in desktop Chrome —
+   their absence is the most likely reason the cube rendered fully flat on the real device. */
+#passport .pp-cube{position:absolute;inset:0;-webkit-transform-style:preserve-3d;transform-style:preserve-3d;transform-origin:50% 50%;
+  transform:scale(.2);transition:transform .9s var(--ease)}
+/* wide magical glow — a flat billboard pinned BEHIND the whole cube. Because #passport itself never
+   rotates (only the cube inside it does), the halo stays flat-on and can never swing in front of a side. */
+#passport .pp-halo{position:absolute;top:50%;left:50%;width:240%;height:224%;z-index:-1;pointer-events:none;
+  transform:translate(-50%,-50%) translateZ(-72px);
+  background:radial-gradient(closest-side,
+    rgba(214,166,255,.92) 0%, rgba(188,140,255,.72) 30%,
+    rgba(255,205,120,.46) 52%, rgba(158,116,255,.22) 72%, transparent 84%);
+  filter:blur(48px);animation:ppHaloPulse 3s ease-in-out infinite}
+@keyframes ppHaloPulse{
+  0%,100%{opacity:.72;transform:translate(-50%,-50%) translateZ(-72px) scale(.94)}
+  50%    {opacity:1;  transform:translate(-50%,-50%) translateZ(-72px) scale(1.12)}}
+/* the six faces of the book */
+#passport .pp-page,#passport .pp-back{position:absolute;top:50%;left:50%;width:var(--ppw,260px);height:var(--pph,347px);
+  border-radius:14px;overflow:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden;border:2px solid var(--pp-navy)}   /* no face glow — the glow comes from the halo BEHIND */
+#passport .pp-page{padding:14px;background:linear-gradient(155deg,#2a2b7a,#171347 60%,#0c0a2e);
+  transform:translate(-50%,-50%) translateZ(calc(var(--thick)/2))}
+#passport .pp-back{background:linear-gradient(155deg,#1b1658,#0c0a2e);
+  transform:translate(-50%,-50%) rotateY(180deg) translateZ(calc(var(--thick)/2))}
+/* edges = page stack (visible NAVY thickness while it floats/rotates) */
+#passport .pp-edge{position:absolute;top:50%;left:50%;background:
+  repeating-linear-gradient(to bottom, #5570d0 0 2px, #24377f 2px 4px);
+  border:1px solid #101d55;-webkit-backface-visibility:visible;backface-visibility:visible;
+  box-shadow:inset 0 0 14px rgba(0,0,0,.42),0 0 2px rgba(125,155,255,.8)}
+#passport .pp-edge.r{width:var(--thick);height:var(--pph,347px);transform:translate(-50%,-50%) rotateY(90deg) translateZ(calc(var(--ppw,260px)/2))}
+#passport .pp-edge.l{width:var(--thick);height:var(--pph,347px);transform:translate(-50%,-50%) rotateY(-90deg) translateZ(calc(var(--ppw,260px)/2));
+  background:linear-gradient(90deg,#17275f,#3e55ad 48%,#101a46)} /* spine (binding) darker navy */
+#passport .pp-edge.t{width:var(--ppw,260px);height:var(--thick);transform:translate(-50%,-50%) rotateX(90deg) translateZ(calc(var(--pph,347px)/2));
+  background:repeating-linear-gradient(to right,#5b73c8 0 2px,#263b83 2px 4px)}
+#passport .pp-edge.b{width:var(--ppw,260px);height:var(--thick);transform:translate(-50%,-50%) rotateX(-90deg) translateZ(calc(var(--pph,347px)/2));
+  background:repeating-linear-gradient(to right,#4058ae 0 2px,#17265f 2px 4px)}
+/* resting state ALWAYS keeps a 3D tilt so the navy thickness/edges are visible (never flat) */
+/* visible whenever shown — spin-in / float / open all co-occur with .show */
+#passport.show,#passport.spin-in{opacity:1}
+/* resting pose ALWAYS keeps a 3D tilt so the navy thickness is visible (never flat) */
+#passport.show .pp-cube{transform:scale(1) rotateY(-24deg) rotateX(14deg)}
+#passport.tocam .pp-cube{transform:scale(1.06) rotateY(-20deg) rotateX(12deg)}
+/* materialize: the whole solid tile spins in and settles at its tilt (edges on show the whole time) */
+@keyframes ppSpin{0%{opacity:0;transform:rotateY(700deg) rotateX(18deg) scale(.16)}
+  30%{opacity:1}100%{opacity:1;transform:rotateY(-24deg) rotateX(14deg) scale(1)}}
+#passport.spin-in .pp-cube{animation:ppSpin 3.4s cubic-bezier(.16,.7,.2,1) both}
+/* gentle idle 3D rotation while closed */
+@keyframes ppRock{0%,100%{transform:rotateY(-36deg) rotateX(15deg)}
+  50%{transform:rotateY(-14deg) rotateX(12deg)}}
+#passport.slowspin .pp-cube{animation:ppRock 3.6s ease-in-out infinite}
+/* floating 3D tile — bobs up/down while turning to reveal its navy page-edges */
+@keyframes ppFloat{
+  0%,100%{transform:translateY(-3%) rotateY(-36deg) rotateX(15deg)}
+  50%{transform:translateY(3%) rotateY(-14deg) rotateX(12deg)}}
+#passport.float .pp-cube{animation:ppFloat 6s ease-in-out infinite}
+/* unfold staging: big passport parks in the LEFT half — its right edge never crosses the middle crease */
+body.pp-split #passport{left:25%!important}
+/* grow into the camera frame (selfie 1) */
+#passport.grow{opacity:0;transition:opacity 1s ease .5s}
+#passport.grow .pp-cube{transform:scale(3.6);transition:transform 1.6s var(--ease)}
+/* book cover — hinges on the RIGHT, swings open toward the viewer, then fades away */
+#passport .pp-cover{position:absolute;top:50%;left:calc(50% - var(--ppw,260px)/2);width:var(--ppw,260px);height:var(--pph,347px);
+  z-index:8;border-radius:14px;
+  background:
+    radial-gradient(90% 60% at 30% 18%, rgba(255,255,255,.10), transparent 60%),
+    linear-gradient(150deg,#173a72,#0b1f4c);
+  border:2px solid var(--pp-navy);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  transform-origin:left center;-webkit-backface-visibility:hidden;backface-visibility:hidden;
+  box-shadow:inset 0 0 60px rgba(0,0,0,.4);
+  transform:translateY(-50%) translateZ(calc(var(--thick)/2 + 1px));
+  transition:transform 8.5s cubic-bezier(.3,.05,.3,1),opacity 4.5s ease 3.5s;}   /* opens very slowly & gradually */
+#passport .pp-cover::before{content:"";position:absolute;left:6px;top:8%;bottom:8%;width:3px;
+  background:rgba(255,215,122,.5);border-radius:2px} /* spine line */
+#passport .pp-cover::after{content:"";position:absolute;inset:10px;border:1px solid rgba(255,215,122,.35);
+  border-radius:11px;pointer-events:none} /* gold inner frame */
+#passport .pp-cover .pc-emblem{font-size:50px;width:104px;height:104px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid rgba(255,215,122,.75);box-shadow:0 0 26px rgba(255,215,122,.3), inset 0 0 18px rgba(255,215,122,.14);
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+#passport .pp-cover .pc-title{font-size:12px;letter-spacing:3px;color:var(--gold);font-weight:800;text-align:center}
+#passport .pp-cover .pc-sub{font-size:9px;color:var(--muted);letter-spacing:2px;text-align:center}
+#passport .pp-cover{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+/* unfolds RIGHT→LEFT: hinges on the LEFT edge, swings open, then fades away */
+#passport.open .pp-cover{transform:translateY(-50%) translateZ(calc(var(--thick)/2 + 1px)) rotateY(-168deg);opacity:0}
+/* galaxy interior — blue/purple magic, moving stars + carve frame */
+#passport .pp-page{background:
+  radial-gradient(60% 42% at 78% 18%, rgba(160,110,240,.42), transparent 62%),
+  radial-gradient(52% 42% at 18% 84%, rgba(80,120,240,.36), transparent 62%),
+  linear-gradient(155deg,#2a2372,#171049 55%,#0b0830)!important}
+#passport .pp-stars{position:absolute;inset:-25%;pointer-events:none;opacity:.75;animation:spin 70s linear infinite;
+  background-repeat:no-repeat;background:
+   radial-gradient(1.6px 1.6px at 22% 28%,#fff,transparent),radial-gradient(1.2px 1.2px at 62% 18%,#cfe,transparent),
+   radial-gradient(1.6px 1.6px at 82% 58%,#fff,transparent),radial-gradient(1.2px 1.2px at 34% 74%,#ecf,transparent),
+   radial-gradient(1.6px 1.6px at 52% 46%,#fff,transparent),radial-gradient(1.2px 1.2px at 14% 54%,#fff,transparent),
+   radial-gradient(1.4px 1.4px at 70% 82%,#dff,transparent),radial-gradient(1.2px 1.2px at 44% 12%,#fff,transparent)}
+#passport .pp-carve{position:absolute;inset:9px;border:1px solid rgba(200,180,255,.28);border-radius:11px;pointer-events:none}
+#passport .pp-carve::before{content:"";position:absolute;inset:4px;border:1px dashed rgba(200,180,255,.22);border-radius:8px}
+#passport .pp-spark{position:absolute;color:#fff;font-size:11px;pointer-events:none;animation:twinkle 6.6s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.25)}}
+#passport .pp-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center}
+#passport .pp-brand{font-size:calc(var(--ppw,260px)*0.052);letter-spacing:2px;color:#fff;font-weight:900;
+  text-shadow:0 2px 5px rgba(0,0,0,.85),0 3px 16px rgba(90,70,210,.95),0 0 30px rgba(120,100,255,.6)}
+#passport .pp-emblem{font-size:calc(var(--ppw,260px)*0.07)}
+/* white-bordered galaxy stickers — scale with the passport so they're never tiny */
+#passport .pp-stk{position:absolute;z-index:4;width:1.6em;height:1.6em;font-size:calc(var(--ppw,260px)*0.082);
+  display:flex;align-items:center;justify-content:center;background:#fff;border:3px solid #fff;border-radius:50%;
+  box-shadow:0 4px 10px rgba(0,0,0,.3)}
+#passport .pp-stk.sq{border-radius:12px}
+#passport .pp-stk.tag{width:auto;height:auto;font-size:9px;font-weight:900;letter-spacing:1px;color:#1428a0;padding:4px 9px;border-radius:16px;transform:rotate(-6deg)}
+/* selfie 1 — top-left, clear of the header (big, fills the space) */
+#passport .pp-photo{position:absolute;left:9%;top:20%;z-index:2;
+  width:34%;aspect-ratio:3/4;border-radius:8px;border:2px solid rgba(220,200,255,.6);
+  background:#0a0a2a center/cover;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+#passport .pp-photo.empty{border-style:dashed;animation:pulseBorder 1.6s infinite}
+@keyframes pulseBorder{50%{border-color:var(--gold)}}
+/* selfie 2 — big, lower half, with margins + a clear gap above it */
+#passport .pp-photo2{position:absolute;left:12%;bottom:10%;z-index:2;width:76%;aspect-ratio:16/9;border-radius:10px;
+  border:3px solid #fff;background:#0a0a2a center/cover;box-shadow:0 10px 24px rgba(0,0,0,.55);display:none}
+#passport .pp-dest{position:absolute;left:49%;top:22%;z-index:2;font-size:calc(var(--ppw,260px)*0.062);font-weight:800}
+#passport .pp-meta{position:absolute;left:49%;top:33%;z-index:2;font-size:calc(var(--ppw,260px)*0.032);color:var(--muted)}
+#passport .pp-serial{position:absolute;left:8%;bottom:3%;z-index:5;font-size:calc(var(--ppw,260px)*0.03);color:var(--gold);letter-spacing:1px}
+#passport .stamp{position:absolute;z-index:7;font-weight:900;letter-spacing:.5px;color:#ff6b5a;
+  border:2.5px solid #ff6b5a;border-radius:7px;padding:2px 5px;font-size:calc(var(--ppw,260px)*0.044);opacity:0;white-space:nowrap;
+  transform:rotate(-13deg) scale(3);text-transform:uppercase}   /* z-index 7 = above stickers (z:4) */
+#passport .stamp.show{opacity:.92;transform:rotate(-13deg) scale(1);transition:transform .18s cubic-bezier(.3,1.6,.5,1),opacity .1s}
+#passport .stamp.s1{left:43%;top:39%}
+#passport .stamp.s2{left:54%;top:48%;color:#5ad0a0;border-color:#5ad0a0;transform:rotate(8deg) scale(3)}
+#passport .stamp.s2.show{transform:rotate(8deg) scale(1)}
+
+/* final full passport overlay */
+#final{position:absolute;inset:0;z-index:70;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:22px 22px calc(22px + var(--safe-bottom));
+  background:rgba(4,8,20,.72);backdrop-filter:blur(10px);overflow:auto}
+#final.show{display:flex;animation:fade .5s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+/* the whole passport unfolds as ONE smooth piece, hinged at the CENTRE crease, sweeping right→left to flat —
+   no separate cover panels, just one continuous motion */
+#final.show .final-card{animation:fcUnfold 1.2s cubic-bezier(.22,.61,.36,1) both;transform-origin:center center}
+@keyframes fcUnfold{0%{opacity:0;transform:perspective(2400px) rotateY(84deg)}
+  14%{opacity:1}
+  100%{opacity:1;transform:perspective(2400px) rotateY(0deg)}}
+/* the book crease/spine down the middle */
+.final-card .fc-crease{position:absolute;left:50%;top:0;bottom:0;width:0;transform:translateX(-50%);z-index:7;pointer-events:none;
+  box-shadow:-9px 0 20px rgba(110,80,45,.12), 9px 0 20px rgba(110,80,45,.12);border-left:1px solid rgba(110,80,45,.22)}
+
+/* ============ CAMERA ============ */
+#cam-wrap{position:absolute;inset:0;z-index:50;display:none;flex-direction:column;background:#000;
+  transform-origin:center center}
+#cam-wrap.show{display:flex;animation:camIn 1.3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes camIn{0%{opacity:0;transform:scale(.55);border-radius:40px}
+  40%{opacity:1}100%{opacity:1;transform:scale(1);border-radius:0}}
+#cam-head{text-align:center;padding:calc(var(--safe-top) + 8px) 16px 10px;position:relative;z-index:7;
+  font-weight:800;font-size:16px;background:linear-gradient(#0a1a3f,#0a1a3fcc)}
+#cam-head small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:3px}
+#cam-area{flex:1;position:relative;overflow:hidden;background:#000}
+#cam-video,#cam-canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#cam-video{transform:scaleX(-1)}
+#cam-canvas{display:none}
+#cam-wrap.shot #cam-video{display:none}#cam-wrap.shot #cam-canvas{display:block}
+#cam-tint{position:absolute;inset:0;display:none;pointer-events:none;z-index:2}
+#cam-frameart{position:absolute;inset:0;display:none;pointer-events:none;z-index:3;
+  font-size:44px}
+#cam-wrap.filter #cam-tint,#cam-wrap.filter #cam-frameart{display:block}
+#cam-wrap.shot #cam-tint,#cam-wrap.shot #cam-frameart{display:none}
+#cam-oval{display:none}   /* face guide hidden — reference only */
+#cam-err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  text-align:center;padding:30px;font-size:14px;color:#ffd4d1;line-height:1.7;white-space:pre-line;z-index:5}
+#cam-ctrl{display:flex;align-items:center;justify-content:center;gap:18px;
+  padding:16px 16px calc(20px + var(--safe-bottom) + env(safe-area-inset-bottom,0))}
+.shutter{width:74px;height:74px;border-radius:50%;border:5px solid #fff;
+  background:rgba(255,255,255,.2);cursor:pointer;transition:transform .06s}
+.shutter:active{transform:scale(.92)}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:6;pointer-events:none}
+
+/* ============ DESTINATION ORBS (orbital roulette) ============ */
+#orbs{position:absolute;inset:0;z-index:26;pointer-events:none;touch-action:none}
+.orb{position:absolute;left:0;top:0;width:120px;height:120px;border-radius:50%;overflow:hidden;
+  border:none;cursor:grab;pointer-events:auto;
+  box-shadow:0 14px 34px rgba(20,10,60,.5),inset 0 -16px 26px rgba(40,16,96,.55),0 0 22px rgba(150,110,255,.22);
+  transition:box-shadow .3s;will-change:transform;backface-visibility:hidden}
+.orb .world{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+/* soft magical inner shimmer that slowly drifts */
+.orb .world::after{content:"";position:absolute;inset:-30%;
+  background:radial-gradient(closest-side,rgba(255,255,255,.28),transparent 70%);
+  animation:orbShimmer 7s ease-in-out infinite}
+@keyframes orbShimmer{0%,100%{transform:translate(-8%,-6%)}50%{transform:translate(10%,8%)}}
+/* glossy specular highlight on each sphere */
+.orb::before{content:"";position:absolute;left:20%;top:12%;width:36%;height:32%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.9),transparent 72%);pointer-events:none;z-index:2}
+/* soft pop-glow on first touch */
+.orb.touched{animation:orbTouch .55s var(--spring)}
+@keyframes orbTouch{0%{box-shadow:0 14px 34px rgba(20,10,60,.5),0 0 0 rgba(180,140,255,.9)}
+  40%{box-shadow:0 14px 34px rgba(20,10,60,.5),0 0 40px rgba(200,160,255,.9)}
+  100%{box-shadow:0 14px 34px rgba(20,10,60,.5),0 0 22px rgba(150,110,255,.22)}}
+/* beautiful bubble-pop when selected (2nd tap) */
+.orb.popsel{animation:orbBubblePop .5s cubic-bezier(.2,.8,.3,1) forwards!important}
+@keyframes orbBubblePop{0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  36%{transform:translate(-50%,-50%) scale(1.2);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1.7);opacity:0;filter:blur(5px)}}
+.orb .oemblem{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:41px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));z-index:1;transform:translateY(-6px)}
+.orb .oname{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:13px;font-weight:800;z-index:2;
+  text-shadow:0 2px 6px rgba(0,0,0,.9)}
+/* expanded preview capped small enough that even centered lower on the right half, it can never reach up into her chest/face zone */
+.orb.expanded{width:min(50vmin,210px)!important;height:min(50vmin,210px)!important;left:60%!important;top:60%!important;
+  transform:translate(-50%,-50%)!important;z-index:30!important;opacity:1!important;cursor:pointer;overflow:visible!important;
+  box-shadow:0 24px 70px rgba(20,10,60,.7),0 0 80px rgba(150,110,255,.6)}
+body.phase-fold .orb.expanded{left:75%!important}
+.orb.expanded .oemblem{font-size:72px;transform:translateY(-4px)}
+/* title + "tap again" sit OUTSIDE, BELOW the bubble, sparkling */
+.orb.expanded .oname{top:calc(100% + 20px);bottom:auto;left:50%;right:auto;transform:translateX(-50%);
+  white-space:nowrap;font-size:24px;text-shadow:0 3px 12px rgba(0,0,0,.85),0 0 20px rgba(160,120,255,.7)}
+.orb.expanded .oname::after{content:"한 번 더 탭! ✨";display:block;font-weight:600;opacity:.92;font-size:14px;
+  margin-top:8px;color:#e8dcff;animation:twinkle 1.3s ease-in-out infinite}
+.orb.dim{filter:saturate(.6) brightness(.8)}
+
+/* ============ PILOT / DEPARTURE ============ */
+#pilot-badge{position:absolute;top:var(--safe-top);left:50%;
+  transform:translateX(-50%) scale(.6);z-index:40;opacity:0;
+  background:linear-gradient(135deg,rgba(91,140,255,.95),rgba(154,107,255,.95));
+  border:1px solid rgba(255,255,255,.35);padding:7px 18px;border-radius:999px;font-weight:800;font-size:13px;
+  box-shadow:0 8px 26px rgba(0,0,0,.4);transition:opacity .4s,transform .4s var(--ease)}
+#pilot-badge.show{opacity:1;transform:translateX(-50%) scale(1)}
+/* warp-speed light streaks during 3·2·1 */
+/* light streaks BEHIND the character (z below avatar) */
+#warp{position:absolute;inset:0;z-index:5;display:none;pointer-events:none;overflow:hidden}
+#warp.show{display:block}
+#warp .lines{position:absolute;left:50%;top:46%;width:360%;height:360%;
+  background:repeating-conic-gradient(from 0deg at 50% 50%,
+    rgba(255,255,255,0) 0 1.3deg, rgba(220,225,255,.6) 1.3deg 1.75deg, rgba(255,255,255,0) 1.75deg 5deg);
+  -webkit-mask:radial-gradient(circle,transparent 4%,#000 26%);mask:radial-gradient(circle,transparent 4%,#000 26%);
+  transform:translate(-50%,-50%) scale(1)}
+/* slow drifting streaks during the hype */
+#warp.slow .lines{opacity:.5;animation:warpSlow 9s linear infinite}
+@keyframes warpSlow{0%{transform:translate(-50%,-50%) scale(.9) rotate(0)}
+  100%{transform:translate(-50%,-50%) scale(1.25) rotate(24deg)}}
+/* accelerating outward during the countdown */
+#warp.fast .lines{opacity:1;animation:warp 3.2s cubic-bezier(.5,0,.9,.55) forwards}
+@keyframes warp{0%{transform:translate(-50%,-50%) scale(1) rotate(0)}
+  100%{transform:translate(-50%,-50%) scale(5) rotate(90deg)}}
+#count{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:41;
+  font-size:150px;font-weight:900;color:rgba(255,255,255,.9);text-shadow:0 0 60px rgba(120,150,255,.8);
+  opacity:0}
+#count.show{animation:countpop .9s var(--ease)}
+@keyframes countpop{0%{opacity:0;transform:translate(-50%,-50%) scale(2.4)}40%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.6)}}
+
+/* ============ UNFOLD PROMPT ============ */
+#unfold{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:26px;padding:28px;text-align:center;
+  background:radial-gradient(120% 80% at 50% 36%,rgba(20,40,100,.92),rgba(4,8,20,.97))}
+#unfold.show{display:flex;animation:fade .5s}
+.fold-anim{width:140px;height:172px;display:flex;perspective:800px}
+.fold-anim .leaf{width:50%;height:100%;background:linear-gradient(160deg,#2a4d99,#12305f);border:1px solid rgba(255,255,255,.25)}
+.fold-anim .leaf.l{border-radius:14px 0 0 14px;border-right:none}
+.fold-anim .leaf.r{border-radius:0 14px 14px 0;transform-origin:left center;animation:unf 2s ease-in-out infinite}
+@keyframes unf{0%,100%{transform:rotateY(74deg)}45%,55%{transform:rotateY(0)}}
+#unfold .ut{font-size:20px;font-weight:800}
+#unfold .us{font-size:13px;color:var(--muted);margin-top:-16px}
+/* .auto = the post-countdown UNFOLD transition: right side of the screen (same convention as every other fold-phase element),
+   a slower/more deliberate fold motion, and the SAME clear "please unfold" instruction — never silently swapped for a bare "이륙!" */
+#unfold.auto{padding-left:50%}
+#unfold.auto .devbtn{display:none}
+#unfold.auto .fold-anim .leaf.r{animation-duration:3.6s}
+#unfold.auto .ut{font-size:20px;font-weight:800;margin-top:14px}
+#unfold.auto .us{font-size:13px;color:var(--muted);margin-top:-16px}
+/* fold-back prompt: same visual, animation reversed (closing) */
+#foldback{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:26px;padding:28px;text-align:center;
+  background:radial-gradient(120% 80% at 50% 36%,rgba(20,40,100,.92),rgba(4,8,20,.97))}
+#foldback.show{display:flex;animation:fade .5s}
+.fold-anim.closing .leaf.l{animation:none}
+.fold-anim.closing .leaf.r{animation:fld 2s ease-in-out infinite}
+@keyframes fld{0%,100%{transform:rotateY(0)}45%,55%{transform:rotateY(74deg)}}
+#foldback .ut{font-size:20px;font-weight:800}
+#foldback .us{font-size:13px;color:var(--muted);margin-top:-16px}
+
+/* ============ CINEMATIC (wide) ============ */
+#cine{position:absolute;inset:0;z-index:55;display:none;overflow:hidden;color:#fff}
+#cine.show{display:flex;align-items:center;justify-content:center}
+#cine .scene{position:absolute;inset:0;background-size:cover;animation:cineZoom 6s ease-out forwards}
+@keyframes cineZoom{from{transform:scale(1.25)}to{transform:scale(1.02)}}
+#cine .layer{position:absolute;inset:0;opacity:.6;mix-blend-mode:screen;animation:pan 5s linear infinite}
+@keyframes pan{from{background-position:0 0}to{background-position:120px 0}}
+#cine .vig{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,transparent 40%,rgba(0,0,0,.65))}
+#cine .cname{position:relative;z-index:2;font-size:44px;font-weight:900;letter-spacing:2px;text-shadow:0 6px 30px rgba(0,0,0,.6);opacity:0;animation:cnameIn 1s .3s forwards}
+@keyframes cnameIn{to{opacity:1}}
+#cine .cprog{position:absolute;bottom:26px;left:14%;right:14%;height:4px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;z-index:2}
+#cine .cprog::after{content:"";position:absolute;inset:0;background:#fff;transform-origin:left;animation:progFill 6s linear forwards}
+@keyframes progFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* ============ NICKNAME / FINAL CARD ============ */
+/* ============ FINAL PASSPORT — full-screen paper keepsake ============ */
+#final{padding:0}
+/* the destination's own template artwork IS the design — background-image set per-city in JS */
+.final-card{width:100%;height:100%;max-width:none;position:relative;overflow:hidden;color:#4a3a28;display:block;
+  background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#f4e9d2}
+/* the traveler's final selfie, composited into the template's blank photo frame (same slot on all 3 templates) */
+.final-card .fc-photo{position:absolute;left:16.6%;top:25.5%;width:26.6%;height:37%;
+  background:#e8e0d0 center/cover;z-index:3}
+/* opaque patch that exactly covers ONLY the template's baked-in "터치하여 이름 작성" placeholder line —
+   pixel-measured to sit clear of "hello, this is" above it and "NATIONALITY / CONCEPT" below it */
+.final-card .fc-nick-mask{position:absolute;left:8%;top:72.5%;width:38%;height:6%;z-index:3}
+.final-card .fc-nick{position:absolute;left:8.6%;top:72.9%;width:37%;height:5%;z-index:4;
+  display:flex;align-items:center;font-size:clamp(12px,1.9vh,18px);font-weight:800;
+  outline:none;cursor:text;line-height:1.15}   /* color set per-destination in JS (d.nameColor) */
+.final-card .fc-nick:empty::before{content:"터치하여 이름 작성";color:rgba(0,0,0,.4)}
+/* qr, tucked into an open corner of the collage page */
+.final-card .fc-qr{position:absolute;right:4%;bottom:15%;width:8%;max-width:92px;aspect-ratio:1/1;
+  background:#fff;padding:4px;border:2px solid rgba(0,0,0,.25);border-radius:8px;z-index:5;
+  box-shadow:0 6px 16px rgba(0,0,0,.28)}
+.final-card .fc-qr canvas{width:100%;height:100%;image-rendering:pixelated}
+
+.nick-input{width:78%;max-width:300px;text-align:center;font-size:16px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#3a2c80,#241a52);border:none;border-radius:16px;padding:15px;outline:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 26px rgba(20,10,60,.5)}
+.nick-input::placeholder{color:rgba(210,200,255,.7)}
+.nick-input:focus{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 0 2px var(--gold),0 10px 26px rgba(20,10,60,.5)}
+/* stamp-style button */
+.stampbtn{position:relative;font-weight:900;color:#c0392b;background:rgba(255,255,255,.9);
+  border:4px solid #c0392b;border-radius:12px;padding:12px 24px;font-size:18px;letter-spacing:2px;
+  text-transform:uppercase;transform:rotate(-4deg);cursor:pointer;box-shadow:0 3px 0 rgba(192,57,43,.25);
+  transition:transform .1s}
+.stampbtn:active{transform:rotate(-4deg) scale(.94)}
+/* mission-end stamp sits ON the passport paper (bottom-centre), never below/cut off */
+.final-card .fc-done{position:absolute;left:50%;bottom:1.6%;transform:translateX(-50%) rotate(-3deg);z-index:13}
+.final-card .fc-done:active{transform:translateX(-50%) rotate(-3deg) scale(.94)}
+
+/* ============ CAMERA CUTOUT GUIDE (H8 hardware lens) ============ */
+#cam-guide{position:absolute;top:var(--cam-y);width:calc(var(--cam-r)*2);height:calc(var(--cam-r)*2);
+  border-radius:50%;z-index:96;pointer-events:none;display:none;
+  border:2px dashed rgba(255,255,255,.55);background:rgba(4,6,14,.5);box-shadow:0 0 0 6px rgba(0,0,0,.22)}
+#cam-guide::after{content:"CAM";position:absolute;left:50%;top:calc(100% + 3px);transform:translateX(-50%);
+  font-size:7px;letter-spacing:1px;color:rgba(255,255,255,.55);white-space:nowrap}
+body.cam-guide #cam-guide{display:block}
+body.mode-fold #cam-guide{left:50%;transform:translateX(-50%)}          /* fold: centered */
+body.mode-wide #cam-guide{left:75%;transform:translateX(-50%)}          /* unfold: 3/4 from left */
+
+/* ============ DEBUG ============ */
+#debug{position:absolute;top:6px;right:8px;z-index:99;font-size:10px;color:var(--muted);
+  background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:99px;padding:3px 9px;backdrop-filter:blur(6px)}
+.devbtn{position:absolute;bottom:8px;right:8px;z-index:62;font-size:11px;opacity:.55;
+  background:rgba(255,255,255,.1);border:1px solid var(--border);color:#fff;border-radius:99px;padding:6px 12px;cursor:pointer}
+
+/* passport-mode stay timer */
+#stay-timer{position:absolute;inset:0;z-index:90;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;background:rgba(4,8,20,.78);backdrop-filter:blur(10px);cursor:pointer}
+#stay-timer.show{display:flex;animation:fade .3s}
+#stay-timer .st-ring{width:128px;height:128px;border-radius:50%;border:6px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;color:var(--gold);
+  box-shadow:0 0 44px rgba(255,215,122,.55);animation:pulse 1s ease-in-out infinite}
+#stay-timer .st-txt{font-size:17px;font-weight:800}
+#stay-timer .st-sub{font-size:12px;color:var(--muted);margin-top:-8px}
+.hidden{display:none!important}
+</style>
+</head>
+<body class="mode-wide frame-portal phase-fold">
+<div id="stage">
+  <div id="environment"><div class="aurora"></div><div class="glowtop"></div></div>
+
+  <!-- persistent avatar stream (must exist before init) -->
+  <div id="avatar-layer"><avatar-container id="avatar" volume="100" fit="contain"></avatar-container></div>
+
+  <canvas id="fx"></canvas>
+
+  <div id="title-lockup" class="hidden">
+    <div class="t1">GALAXY</div><div class="t2">PASSPORT</div>
+  </div>
+
+  <!-- persistent passport object (3D thick book) -->
+  <div id="passport">
+    <div class="pp-halo"></div>
+    <div class="pp-cube">
+      <div class="pp-back"></div>
+      <div class="pp-edge r"></div><div class="pp-edge l"></div>
+      <div class="pp-edge t"></div><div class="pp-edge b"></div>
+      <div class="pp-page">
+        <div class="pp-stars"></div>
+        <div class="pp-carve"></div>
+        <div class="pp-spark" style="left:70%;top:44%">✦</div>
+        <div class="pp-spark" style="left:16%;bottom:9%;animation-delay:.7s">✧</div>
+        <div class="pp-spark" style="left:90%;bottom:10%;animation-delay:1.2s">✦</div>
+        <div class="pp-spark" style="left:52%;top:12%;animation-delay:.4s">·</div>
+        <div class="pp-stk" style="right:4%;top:15%">⭐</div>
+        <div class="pp-stk sq" style="right:4%;bottom:6%">🪐</div>
+        <div class="pp-head"><span class="pp-brand">GALAXY PASSPORT</span><span class="pp-emblem" id="pp-emblem">✦</span></div>
+        <div class="pp-photo empty" id="pp-photo"></div>
+        <div class="pp-photo2" id="pp-photo2"></div>
+        <div class="pp-dest" id="pp-dest"></div>
+        <div class="pp-meta" id="pp-meta"></div>
+        <div class="pp-serial" id="pp-serial"></div>
+        <div class="stamp s1" id="pp-stamp1">ENTRY ✦</div>
+        <div class="stamp s2" id="pp-stamp2">ARRIVAL ✦</div>
+      </div>
+      <div class="pp-cover">
+        <div class="pc-emblem">🛂</div>
+        <div class="pc-title">GALAXY PASSPORT</div>
+        <div class="pc-sub">ADVENTURE PASS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- destination orbs -->
+  <div id="orbs"></div>
+
+  <!-- pilot / countdown -->
+  <div id="warp"><div class="lines"></div></div>
+  <div id="count"></div>
+
+  <!-- scene content root -->
+  <div id="scene"></div>
+  <div id="say"></div>
+
+  <!-- camera -->
+  <div id="cam-wrap">
+    <div id="cam-head"><span id="cam-title">여권 사진</span><small id="cam-sub">얼굴을 프레임에 맞춰주세요</small></div>
+    <div id="cam-area">
+      <video id="cam-video" autoplay playsinline muted></video>
+      <canvas id="cam-canvas"></canvas>
+      <div id="cam-tint"></div>
+      <div id="cam-frameart"></div>
+      <div id="cam-oval"></div>
+      <div id="cam-err"></div>
+      <div id="flash"></div>
+    </div>
+    <div id="cam-ctrl">
+      <button class="shutter" id="shutter"></button>
+      <button class="bubble" id="retake" style="display:none">다시</button>
+      <button class="bubble primary" id="confirm" style="display:none">이거야!</button>
+    </div>
+  </div>
+
+  <!-- unfold prompt -->
+  <div id="unfold">
+    <div class="fold-anim"><div class="leaf l"></div><div class="leaf r"></div></div>
+    <div class="ut">Galaxy를 펼쳐줘!</div>
+    <div class="us">게이트를 열면, 이륙합니다 ✈</div>
+    <button class="devbtn" id="unfold-dev">펼쳤어요(테스트)</button>
+  </div>
+
+  <!-- fold-back prompt (after final passport) -->
+  <div id="foldback">
+    <div class="fold-anim closing"><div class="leaf l"></div><div class="leaf r"></div></div>
+    <div class="ut">H8을 접어주세요</div>
+    <div class="us">다음 여행자를 위해 화면을 접어주세요 📱</div>
+    <button class="devbtn" id="foldback-dev">접었어요(테스트)</button>
+  </div>
+
+  <!-- cinematic -->
+  <div id="cine">
+    <div class="scene" id="cine-scene"></div>
+    <div class="layer" id="cine-layer"></div>
+    <div class="vig"></div>
+    <div class="cname" id="cine-name"></div>
+    <div class="cprog"></div>
+  </div>
+
+  <!-- final passport -->
+  <div id="final"></div>
+
+  <!-- passport-mode stay timer (45s idle → 20s tap-to-stay) -->
+  <div id="stay-timer">
+    <div class="st-ring"><span id="st-num">20</span></div>
+    <div class="st-txt">계속 보시려면 화면을 탭하세요</div>
+    <div class="st-sub">잠시 후 처음 화면으로 돌아갑니다</div>
+  </div>
+
+  <!-- boot splash -->
+  <div id="splash">
+    <div class="logo">GALAXY PASSPORT</div>
+    <div class="ring"></div>
+    <div class="tag" id="splash-tag">디지털 휴먼 연결 중…</div>
+  </div>
+
+  <div id="cam-guide"></div>
+  <div id="debug">·</div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const CFG = {
+  sdkKey:"APP-RWd7FAiP3s9aduiTMSVA",
+  avatarId:"4104d2e7-c86b-456c-a4a9-ba2e33a7b1ee", // prev: e2887a99-3dcb-441e-bcb3-1e857e2a2715 (revert here if this one fails)
+  adlp:true,
+  inactivityMs:50000,
+  foldThreshold:1.0,  // ratio >= 1 → unfolded(4:3 main); < 1 → folded(10:16 cover)  (width/height)
+  camGuide:false,     // camera cutout is NOT drawn — position noted in --cam-* vars for layout avoidance only
+  avatarAspect:null,  // null = auto-detect the avatar stream's native w/h and match it (no crop). Override e.g. "9/16" or "3/4" if auto-detect can't read the stream.
+};
+const DEST = [
+  {id:"newyork",name:"뉴욕",emblem:"🗽",image:"assets/newyork.png",paperBg:"#ebe6de",nameColor:"#d1440a",
+   world:"radial-gradient(circle at 40% 30%,#d9e8ff,#6888c8 55%,#23365e)",filter:"contrast(1.12) brightness(1.04) saturate(1.08)",tint:"rgba(90,140,220,.12)",
+   teaser:"네온과 스카이라인이 기다리는 도시야!",hype:"뉴욕이라니, 스카이라인으로 출발!",arrive:"뉴욕 도착! 도시의 불빛이 우릴 반겨주네."},
+  {id:"seoul",name:"서울",emblem:"🏙️",image:"assets/seoul.png",paperBg:"#f5e8d9",nameColor:"#111111",
+   world:"radial-gradient(circle at 40% 30%,#d8efff,#7895d6 55%,#303b78)",filter:"saturate(1.16) contrast(1.06)",tint:"rgba(105,145,230,.11)",
+   teaser:"전통과 미래가 함께 빛나는 도시야.",hype:"서울! 밤하늘 위로 날아가 보자!",arrive:"서울 도착! 도시의 반짝임이 정말 멋지다."},
+  {id:"paris",name:"파리",emblem:"🗼",image:"assets/paris.png",paperBg:"#f3f2f1",nameColor:"#dc387f",
+   world:"radial-gradient(circle at 40% 30%,#ffd9ec,#b57bd6 55%,#5b3a8c)",filter:"saturate(1.15) contrast(1.05) sepia(.1)",tint:"rgba(255,170,200,.16)",
+   teaser:"예술과 빛의 도시! 크루아상은 덤이야.",hype:"파리라니, 낭만 그 자체지!",arrive:"봉주르! 에펠탑이 우릴 반겨주네."},
+];
+const IDLE_LINES = [
+  "여행자여— 세상은 넓고, 우리는 자유야!",
+  "심심하면 나랑 떠나자. 어디든 갈 수 있어!",
+  "화면을 톡 건드려봐. 모험이 시작될 거야!",
+];
+
+/* ============================================================
+   TINY HELPERS
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const stage=$("stage");
+
+/* ---- AVATAR FIT: render the live stream at its NATIVE aspect, whole — NEVER cropped.
+   The SDK gets fit="contain"; here we lock the layer's px size to the stream's real w/h
+   so there are no letterbox bars either. Auto-detects the stream size; CFG.avatarAspect overrides. */
+let avatarAspect=null;
+function parseAspect(v){ if(!v)return null; const p=String(v).split("/"); return (p.length===2&&+p[1])?(+p[0])/(+p[1]):null; }
+function findAvatarMedia(){
+  const c=$("avatar"); if(!c)return null;
+  let v=c.querySelector("video,canvas");
+  if(!v&&c.shadowRoot) v=c.shadowRoot.querySelector("video,canvas");
+  if(!v){ const inner=c.querySelector("*"); if(inner&&inner.shadowRoot) v=inner.shadowRoot.querySelector("video,canvas"); }
+  return v;
+}
+function readAvatarAspect(){
+  if(avatarAspect)return true;
+  const cfg=parseAspect(CFG.avatarAspect); if(cfg){ avatarAspect=cfg; return true; }
+  const v=findAvatarMedia();
+  if(v){ try{ v.style.setProperty("object-fit","contain","important"); v.style.width="100%"; v.style.height="100%"; }catch(e){}
+    const w=v.videoWidth||v.width, h=v.videoHeight||v.height; if(w&&h){ avatarAspect=w/h; return true; } }
+  return false;
+}
+function sizeAvatar(){
+  // The digital human is a FIXED BACKGROUND — same size/position always, whole & uncropped.
+  // Phase (fold/unfold) NEVER moves it; only the buttons/graphics move (in CSS).
+  const layer=$("avatar-layer"); if(!layer)return;
+  if(!document.body.classList.contains("frame-stage")){ layer.style.width=layer.style.height=layer.style.left=layer.style.top=""; return; }
+  const ar=avatarAspect||(9/16);                       // native aspect of the stream
+  const r=stage.getBoundingClientRect(); if(!r.width||!r.height)return;
+  const sAR=r.width/r.height; let w,h;
+  if(ar<=sAR){ h=r.height; w=h*ar; } else { w=r.width; h=w/ar; }   // CONTAIN inside the stage → whole avatar, never cropped
+  const knob=(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--av-unfold-x"))||50)/100;
+  const cx=Math.min(Math.max(knob*r.width, w/2), r.width-w/2);     // clamp so it's never cut
+  layer.style.width=Math.round(w)+"px"; layer.style.height=Math.round(h)+"px"; layer.style.left=Math.round(cx)+"px"; layer.style.top="0px";
+}
+function watchAvatarSize(){ let n=0; const iv=setInterval(()=>{ const ok=readAvatarAspect(); if(ok)sizeAvatar(); if(ok||++n>90)clearInterval(iv); },350); }
+/* where the passport sits (and thus where its particle bursts fire): right-centre in FOLD, centre in UNFOLD */
+function ppTarget(){ const r=stage.getBoundingClientRect();
+  if(document.body.classList.contains("phase-fold")) return [r.width*0.75, r.height*0.57];   // fold: passport in the RIGHT half
+  const split=document.body.classList.contains("pp-split");   // unfold: LEFT-parked passport
+  return [r.width*(split?0.25:0.5), r.height*0.5]; }
+/* continuous magic sparkles drifting around the passport whenever it's on screen */
+(function ppSparkle(){
+  try{ const pp=$("passport");
+    if(pp && pp.classList.contains("show") && typeof FX!=="undefined"){
+      const r=stage.getBoundingClientRect();
+      if(r.width){ const [x,y]=ppTarget();
+        const ppw=parseFloat(getComputedStyle(pp).getPropertyValue("--ppw"))||200;
+        const ang=Math.random()*6.2832, rad=ppw*(0.42+Math.random()*0.34);
+        FX.emit(x+Math.cos(ang)*rad, y+Math.sin(ang)*rad*1.25,
+          {count:2,speed:.9,decay:.009,size:2.8,lift:.6,g:-0.004,col:Math.random()<0.5?"255,225,150":"205,160,255"});
+      }
+    }
+  }catch(e){}
+  setTimeout(ppSparkle, 300);
+})();
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ============================================================
+   FX ENGINE — particles, shake, materialize
+   ============================================================ */
+const FX=(()=>{
+  const cv=$("fx"), ctx=cv.getContext("2d");
+  let W,H,parts=[],running=true;
+  function resize(){const r=stage.getBoundingClientRect();cv.width=W=r.width;cv.height=H=r.height;}
+  new ResizeObserver(resize).observe(stage); resize();
+  function emit(x,y,o={}){
+    const n=o.count||16;
+    for(let i=0;i<n&&parts.length<380;i++){
+      const a=o.angle!=null?o.angle+(Math.random()-.5)*(o.spread||6.28):Math.random()*6.28;
+      const sp=(o.speed||2)*(0.4+Math.random());
+      parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-(o.lift||0),
+        life:1,decay:o.decay||.02,size:(o.size||3)*(0.5+Math.random()),
+        col:o.col||"200,220,255",g:o.g||0.02,tx:o.tx,ty:o.ty});
+    }
+  }
+  // inward converge toward a target (materialize)
+  function converge(tx,ty,o={}){
+    const n=o.count||60, R=o.radius||220;
+    for(let i=0;i<n&&parts.length<380;i++){
+      const a=Math.random()*6.28, d=R*(0.6+Math.random()*0.5);
+      parts.push({x:tx+Math.cos(a)*d,y:ty+Math.sin(a)*d,vx:0,vy:0,
+        life:1,decay:o.decay||.014,size:(o.size||3)*(0.5+Math.random()),
+        col:o.col||"255,215,122",g:0,conv:true,tx,ty,sp:o.sp||0.08});
+    }
+  }
+  function tick(){
+    if(!running){requestAnimationFrame(tick);return;}
+    ctx.clearRect(0,0,W,H);
+    for(let i=parts.length-1;i>=0;i--){const p=parts[i];
+      if(p.conv){p.vx+=(p.tx-p.x)*p.sp;p.vy+=(p.ty-p.y)*p.sp;p.vx*=.82;p.vy*=.82;}
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
+      if(p.life<=0){parts.splice(i,1);continue;}
+      ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=`rgb(${p.col})`;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,6.28);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(tick);
+  }
+  tick();
+  document.addEventListener("visibilitychange",()=>running=!document.hidden);
+  // ambient dust — gentle, slow, smooth (fewer + longer-lived)
+  setInterval(()=>{if(running&&parts.length<120)emit(Math.random()*W,H+10,{count:1,angle:-1.57,spread:.5,speed:.28,lift:.2,decay:.0016,size:1.7,col:"180,170,255",g:-0.0015});},520);
+  function shake(px=5,ms=140){const s=$("stage");let t=0;const iv=setInterval(()=>{t+=20;s.style.transform=`translate(${(Math.random()-.5)*px}px,${(Math.random()-.5)*px}px)`;if(t>=ms){clearInterval(iv);s.style.transform="";}},20);}
+  // helper: absolute center of an element in stage coords
+  function center(el){const r=el.getBoundingClientRect(),s=stage.getBoundingClientRect();return[r.left-s.left+r.width/2,r.top-s.top+r.height/2];}
+  return {emit,converge,shake,center,resize};
+})();
+
+/* ============================================================
+   SFX — synthesized audio cues + haptics (no asset files).
+   Volumes deliberately low; ducks under avatar TTS naturally.
+   AudioContext resumes on first user gesture (autoplay policy).
+   ============================================================ */
+const Sfx=(()=>{
+  let ctx=null;
+  const ensure=()=>{ if(!ctx){ try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return ctx; };
+  window.addEventListener("pointerdown",()=>{const c=ensure();if(c&&c.state==="suspended")c.resume();},{passive:true});
+  function tone(f,dur,type="sine",vol=.11,delay=0){ const c=ensure(); if(!c)return;
+    const t=c.currentTime+delay, o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.02);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t+dur+.05); }
+  return {
+    scroll(){ tone(660,.028,"triangle",.05); },                                   // soft tick as the orbit rotates
+    chime(){ tone(880,.5); tone(1318,.6,"sine",.07,.07); },                       // materialize / open / select
+    sparkle(){ [1568,1976,2637].forEach((f,i)=>tone(f,.35,"sine",.055,i*.07)); }, // celebration glitter
+    shutter(){ const c=ensure(); if(!c)return; const t=c.currentTime;              // crisp camera flash/click
+      const b=c.createBuffer(1,Math.floor(c.sampleRate*.075),c.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,7);
+      const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain(); s.buffer=b;
+      f.type="highpass"; f.frequency.setValueAtTime(1800,t); g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.0001,t+.075);
+      s.connect(f).connect(g).connect(c.destination); s.start(t); tone(2400,.045,"triangle",.08,.006); },
+    thunk(){ tone(150,.16,"square",.16); tone(85,.24,"sine",.18,.02);             // stamp slam / shutter
+      try{ navigator.vibrate && navigator.vibrate(60); }catch(e){} },
+    rumble(){ const c=ensure(); if(!c)return; const t=c.currentTime;              // stamp rumble (given a stamp)
+      const b=c.createBuffer(1,c.sampleRate*.5,c.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+      const s=c.createBufferSource(); s.buffer=b;
+      const f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.setValueAtTime(140,t); f.frequency.linearRampToValueAtTime(70,t+.5);
+      const g=c.createGain(); g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.0001,t+.5);
+      s.connect(f).connect(g).connect(c.destination); s.start(t);
+      tone(60,.28,"sine",.2);
+      try{ navigator.vibrate && navigator.vibrate([50,25,70]); }catch(e){} },
+    whoosh(){ const c=ensure(); if(!c)return; const t=c.currentTime;              // fold→wide transition
+      const b=c.createBuffer(1,c.sampleRate*.6,c.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+      const s=c.createBufferSource(); s.buffer=b;
+      const f=c.createBiquadFilter(); f.type="bandpass";
+      f.frequency.setValueAtTime(400,t); f.frequency.exponentialRampToValueAtTime(3200,t+.5);
+      const g=c.createGain(); g.gain.setValueAtTime(.11,t); g.gain.exponentialRampToValueAtTime(.0001,t+.6);
+      s.connect(f).connect(g).connect(c.destination); s.start(t); },
+  };
+})();
+
+/* ============================================================
+   SDK BRIDGE + SPEECH DIRECTOR  (G3/G4)
+   ============================================================ */
+const SDK=window.KlleonSDK;
+let sdkReady=false, welcomeSuppressed=true;
+const Speech=(()=>{
+  let queue=[], speaking=false, resolver=null, guard=null;
+  const layer=$("avatar-layer"), say=$("say");
+  SDK.onStatus(s=>{ $("debug").textContent=Scene.cur+" · "+s;
+    if(s==="CONNECTED_FINISH"){sdkReady=true;} });
+  SDK.onSignal(d=>{
+    if(d.signal==="RESPONSE_ENDED"||d.signal==="SPEECH_ENDED"){ finish(); }
+  });
+  SDK.onError(e=>console.warn("[SDK]",e.code,e.message));
+  function finish(){ if(!speaking)return; speaking=false;
+    layer.classList.remove("speaking"); say.classList.remove("show");
+    clearTimeout(guard); const r=resolver;resolver=null; if(r)r(); pump(); }
+  function pump(){ if(speaking||!queue.length)return; const item=queue.shift();
+    speaking=true; resolver=item.done;
+    say.textContent=item.text; say.classList.add("show"); layer.classList.add("speaking");
+    try{ SDK.speak(item.text); }catch(e){ /* fall through to guard */ }
+    // guard: ONLY a fallback if the RESPONSE_ENDED signal never arrives.
+    // Korean TTS is slow (~200ms/char incl. pauses); keep this long so we never cut a line short.
+    const est=Math.max(2400, item.text.length*205);
+    guard=setTimeout(finish, est+2800);
+  }
+  // say(): returns promise resolving when the line finishes (or estimate)
+  function say_(text,{replace=false}={}){
+    return new Promise(res=>{
+      if(replace){ queue=[]; if(speaking){ try{SDK.stopSpeaking();}catch(e){} } }
+      queue.push({text,done:res}); pump();
+    });
+  }
+  function cancelAll(){ queue=[]; if(speaking){try{SDK.stopSpeaking();}catch(e){}} finish(); }
+  return {say:say_,cancelAll};
+})();
+
+/* ============================================================
+   FOLD MANAGER
+   ============================================================ */
+const Fold=(()=>{
+  let wideAllowed=true;  // (kept for API compatibility; layout is now forced wide)
+  function state(){return (window.innerWidth/window.innerHeight)>=CFG.foldThreshold?"wide":"fold";}
+  function layout(){return "wide";}  // FORCED: the whole experience renders in 4:3 unfold — no portrait fold mode
+  let last=state();
+  function sizePassport(){ const r=stage.getBoundingClientRect();
+    const fold=document.body.classList.contains("phase-fold");   // fold = smaller (fits the right half, doesn't cover the face/neck)
+    const w=Math.round(fold ? Math.min(160, r.width*0.22, r.height*0.27) : Math.min(320, r.width*0.32, r.height*0.46));
+    const pp=$("passport"); pp.style.setProperty("--ppw",w+"px"); pp.style.setProperty("--pph",Math.round(w*4/3)+"px"); }
+  function apply(){ const m=layout();
+    document.body.classList.toggle("mode-fold",m==="fold");
+    document.body.classList.toggle("mode-wide",m==="wide");
+    FX.resize(); sizePassport(); sizeAvatar();
+    const s=state(); if(s!==last){ last=s; Scene.onPosture(s); }
+  }
+  window.addEventListener("resize",apply);
+  window.addEventListener("orientationchange",()=>setTimeout(apply,150));
+  return {apply,get:state,allowWide(b){wideAllowed=b;apply();},sizePassport};
+})();
+
+/* ============================================================
+   AVATAR FRAMING
+   ============================================================ */
+function frame(name){ // portal | stage | medallion
+  document.body.classList.remove("frame-portal","frame-stage","frame-medallion");
+  document.body.classList.add("frame-"+name);
+  sizeAvatar();
+}
+
+/* ============================================================
+   CAMERA MANAGER  (4K request; filter baked at capture)
+   ============================================================ */
+const Cam=(()=>{
+  const wrap=$("cam-wrap"),video=$("cam-video"),canvas=$("cam-canvas"),
+        tint=$("cam-tint"),frameart=$("cam-frameart"),err=$("cam-err"),flash=$("flash"),
+        shutter=$("shutter"),retake=$("retake"),confirm=$("confirm"),
+        title=$("cam-title"),sub=$("cam-sub");
+  let stream=null, dataUrl=null, theme=null, onDone=null, wideMode=false;
+  async function open({titleTxt,subTxt,filterTheme,done,wide=false}){
+    theme=filterTheme||null; onDone=done; dataUrl=null; wideMode=wide;
+    title.textContent=titleTxt; sub.textContent=subTxt;
+    wrap.classList.remove("shot"); mode(false);
+    wrap.classList.toggle("wide",wide);            // wide=16:9 selfie, no oval guide
+    wrap.classList.toggle("filter",!!theme);
+    if(theme){ video.style.filter=theme.filter; tint.style.background=theme.tint; }
+    else{ video.style.filter=""; }
+    wrap.classList.add("show"); err.style.display="none";
+    try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:3840},height:{ideal:2160}},audio:false});
+         video.srcObject=stream; }
+    catch(e){ err.style.display="flex";
+      err.textContent="이런, 카메라 문이 잠겨있네!\n\n브라우저 카메라 권한을 허용하고,\nhttps 또는 localhost에서 열어줘."; }
+  }
+  function mode(shot){ shutter.style.display=shot?"none":"";
+    retake.style.display=shot?"":"none"; confirm.style.display=shot?"":"none"; }
+  function stop(){ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} video.srcObject=null; }
+  shutter.onclick=()=>{ const vw=video.videoWidth,vh=video.videoHeight;
+    if(!vw||vh<2||video.readyState<2)return;
+    // wide mode → crop source to 16:9 (wide selfie); else full frame
+    let sx=0,sy=0,sw=vw,sh=vh;
+    if(wideMode){ if(vw/vh>16/9){sw=vh*16/9;sx=(vw-sw)/2;} else {sh=vw*9/16;sy=(vh-sh)/2;} }
+    const ow=Math.round(sw),oh=Math.round(sh);
+    canvas.width=ow;canvas.height=oh;const c=canvas.getContext("2d");
+    c.save(); if(theme)c.filter=theme.filter; c.translate(ow,0); c.scale(-1,1);
+    c.drawImage(video,sx,sy,sw,sh,0,0,ow,oh); c.restore();
+    // theme tint baked in; NO emoji sticker in the photo itself (the passport
+    // carries the world stamps — keeps captures clean and premium)
+    if(theme && theme.tint){ c.fillStyle=theme.tint; c.fillRect(0,0,ow,oh); }
+    dataUrl=canvas.toDataURL("image/png");
+    Sfx.shutter();
+    flash.style.transition="none";flash.style.opacity=".9";requestAnimationFrame(()=>{flash.style.transition="opacity .4s";flash.style.opacity="0";});
+    wrap.classList.add("shot"); mode(true); };
+  retake.onclick=()=>{ wrap.classList.remove("shot"); mode(false); };
+  confirm.onclick=()=>{ const d=dataUrl; stop(); wrap.classList.remove("show","filter","shot");
+    const cb=onDone; onDone=null; if(cb)cb(d); };
+  function forceClose(){ stop(); wrap.classList.remove("show","filter","shot"); }
+  return {open,forceClose};
+})();
+
+/* ============================================================
+   PASSPORT STORE + RENDER
+   ============================================================ */
+const Store={selfie1:null,selfie2:null,dest:null,nickname:"이름 모를 여행자",
+  serial:"GP-2026-"+String(Math.floor(1000+performance.now()%9000)).padStart(4,"0"),
+  date:new Date().toISOString().slice(0,10)};
+function wipe(){Store.selfie1=null;Store.selfie2=null;Store.dest=null;Store.nickname="이름 모를 여행자";
+  $("pp-photo").style.backgroundImage="";$("pp-photo").classList.add("empty");
+  $("pp-photo2").style.display="none";$("pp-photo2").style.backgroundImage="";
+  ["pp-dest","pp-meta","pp-serial"].forEach(i=>$(i).textContent="");
+  $("pp-stamp1").classList.remove("show");$("pp-stamp2").classList.remove("show");}
+
+/* minimal decorative QR (placeholder pattern — real self-save via image host, see BLUEPRINT §5a) */
+function drawQR(canvas,seed){const n=21,px=canvas.width/n,c=canvas.getContext("2d");
+  c.fillStyle="#fff";c.fillRect(0,0,canvas.width,canvas.height);c.fillStyle="#0a1a3f";
+  let s=seed;for(let y=0;y<n;y++)for(let x=0;x<n;x++){s=(s*1103515245+12345)&0x7fffffff;
+    const fp=(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);
+    if(fp){const lx=x>13?x-14:x,ly=y>13?y-14:y;if(lx===0||lx===6||ly===0||ly===6||(lx>1&&lx<5&&ly>1&&ly<5))c.fillRect(x*px,y*px,px,px);}
+    else if((s%100)<45)c.fillRect(x*px,y*px,px,px);}}
+
+/* ============================================================
+   SCENE MANAGER  (state machine)
+   ============================================================ */
+const Scene=(()=>{
+  let cur="boot", token=0;
+  const scene=$("scene");
+  function clearScene(){ scene.innerHTML=""; scene.className="";
+    const ob=$("orbs"); ob.innerHTML=""; ob.style.pointerEvents="none";
+    ob.onpointerdown=ob.onpointermove=ob.onpointerup=null; }
+  async function go(name){ token++; const my=token; cur=name; $("debug").textContent=name;
+    Speech.cancelAll(); clearScene(); stopStayTimer(); Cam.forceClose(); Inact.reset();
+    $("title-lockup").classList.add("hidden"); // title lockup removed entirely
+    if(name!=="foldback"){ $("foldback").classList.remove("show"); $("foldback").onclick=null; }  // the "접어줘" graphic ONLY ever shows in the foldback scene — never during fold-mode idle
+    const fn=SCN[name]; if(fn) await fn(my);
+  }
+  function alive(my){return my===token;}
+  function onPosture(s){ if(SCN[cur+"_posture"]) SCN[cur+"_posture"](s); }
+  return {go,get cur(){return cur},alive,onPosture,tok:()=>token};
+})();
+
+/* helper: build a glass bubble */
+function bubble(html,cls=""){const b=document.createElement("button");b.className="bubble "+cls;b.innerHTML=html;return b;}
+function say(t,o){return Speech.say(t,o);}
+
+/* ============================================================
+   INACTIVITY
+   ============================================================ */
+const Inact=(()=>{
+  let t=null; const exempt=["boot","cinematic","reward","foldback"]; // reward=stay-timer, foldback waits for fold
+  function reset(){ clearTimeout(t); if(exempt.includes(Scene.cur))return;
+    t=setTimeout(async()=>{ if(exempt.includes(Scene.cur))return;
+      // mid-experience timeout → straight HOME (NO fold-back graphic; that only appears on the final screen)
+      await say("다음에 또 만나자, 여행자!",{replace:true}); doReset(); },CFG.inactivityMs); }
+  ["pointerdown","keydown","touchstart"].forEach(e=>window.addEventListener(e,reset,{passive:true}));
+  return {reset};
+})();
+/* passport-mode stay timer: 45s idle → 20s countdown → home (tap to stay) */
+let _stayIdle=null,_stayCount=null,_stayTapHandler=null;
+function startStayTimer(my){ stopStayTimer();
+  const st=$("stay-timer");
+  function arm(){ clearTimeout(_stayIdle); clearInterval(_stayCount); st.classList.remove("show");
+    _stayIdle=setTimeout(()=>{ if(!Scene.alive(my))return;
+      let n=10; $("st-num").textContent=n; st.classList.add("show");        // idle → visible countdown
+      _stayCount=setInterval(()=>{ n--; $("st-num").textContent=n;
+        if(n<=0){ clearInterval(_stayCount); st.classList.remove("show"); $("final").classList.remove("show"); Scene.go("foldback"); } },1000);
+    },30000);   // 30s idle on the final screen → 10s countdown → fold-back prompt
+  }
+  _stayTapHandler=()=>{ if(!Scene.alive(my)){stopStayTimer();return;} arm(); };
+  st.onclick=_stayTapHandler;
+  document.addEventListener("pointerdown",_stayTapHandler);
+  arm();
+}
+function stopStayTimer(){ clearTimeout(_stayIdle); clearInterval(_stayCount);
+  const st=$("stay-timer"); if(st){st.classList.remove("show");st.onclick=null;}
+  if(_stayTapHandler){document.removeEventListener("pointerdown",_stayTapHandler);_stayTapHandler=null;} }
+
+async function doReset(){ stopStayTimer(); Cam.forceClose(); wipe();
+  document.body.classList.add("phase-fold"); document.body.classList.remove("phase-unfold");   // next traveller starts in fold (cover) phase
+  $("passport").classList.remove("show","tocam","open","spin-in","slowspin","grow","float"); $("final").classList.remove("show"); document.body.classList.remove("pp-split");
+  $("unfold").classList.remove("show"); $("foldback").classList.remove("show"); $("stay-timer").classList.remove("show");
+  $("warp").classList.remove("show","slow","fast"); $("count").classList.remove("show"); $("cine").classList.remove("show");
+  Fold.allowWide(false); // back to fold layout for the next traveler
+  Scene.go("idle"); }
+
+/* ============================================================
+   SCENES
+   ============================================================ */
+const SCN={};
+
+/* ---- BOOT ---- */
+SCN.boot=async(my)=>{
+  frame("portal"); document.body.classList.add("mode-wide");
+  document.body.classList.toggle("cam-guide", CFG.camGuide);
+  const wait=setInterval(()=>{ if(sdkReady){clearInterval(wait);
+    $("splash").classList.add("hide"); setTimeout(()=>Scene.go("idle"),500);} },200);
+};
+
+/* ---- IDLE (attract) ---- */
+SCN.idle=async(my)=>{
+  frame("stage");   // title lockup removed — DG is the full background
+  const p=document.createElement("div");p.className="panel";
+  const cta=bubble('<span class="ico">🧭</span> 여행을 떠나볼까?','primary pulse');
+  cta.onclick=()=>Scene.go("greeting");
+  p.appendChild(cta); $("scene").appendChild(p);
+  // guard: ignore the very click that entered idle (prevents bubbling from a reset tap)
+  const entered=performance.now();
+  stage.onclick=()=>{ if(Scene.cur==="idle" && performance.now()-entered>500) Scene.go("greeting"); };
+  let i=0; (async function loop(){ while(Scene.alive(my)){ await sleep(9000);
+    if(!Scene.alive(my))break; await say(IDLE_LINES[i++%IDLE_LINES.length]); } })();
+};
+SCN.idle_posture=()=>{}; // idle is stateless across fold
+
+/* ---- GREETING ---- (instant: avatar offers help, two buttons pop out) ---- */
+SCN.greeting=async(my)=>{
+  frame("stage"); $("title-lockup").classList.add("hidden"); stage.onclick=null;
+  say("반가워, 여행자! H8에 대해서든, 뭐든 편하게 물어봐. 무엇을 도와줄까?"); // spoken immediately, non-blocking
+  // two horizontal bubbles pop out with magic — right away
+  const [hx,hy]=FX.center($("avatar-layer"));
+  const p=document.createElement("div");p.className="cluster";
+  const items=[["💬","H8·무엇이든 물어보기","chat"],["🧭","어드벤처 미션","passportintro"]];
+  items.forEach(([ico,label,go],k)=>{
+    const b=bubble(`<span class="ico">${ico}</span> ${label}`, go==="passportintro"?"primary":"");
+    b.style.opacity="0";
+    b.onclick=()=>{ const [bx,by]=FX.center(b); FX.emit(bx,by,{count:20,speed:3.4,col:"200,180,255"}); Sfx.chime(); Scene.go(go); };
+    p.appendChild(b);
+    setTimeout(()=>{ if(!Scene.alive(my))return;
+      FX.emit(hx,hy+30,{count:16,speed:2.8,col:"190,160,255"}); Sfx.sparkle();
+      b.style.opacity="1"; b.classList.add("pop"); },120+k*150);
+  });
+  $("scene").appendChild(p);
+};
+
+/* ---- TOUR (feature showcase) ---- */
+SCN.tour=async(my)=>{ frame("stage");
+  const lines=["좋아! 나는 진짜 사람처럼 너와 대화할 수 있어.",
+    "네 표정도, 목소리도, 선택도 다 느낄 수 있지!",
+    "그리고 이 기기를 펼치면— 완전히 새로운 세계로 데려갈 수 있어!"];
+  for(const l of lines){ if(!Scene.alive(my))return; await say(l); }
+  if(!Scene.alive(my))return;
+  const p=document.createElement("div");p.className="panel";
+  const b=bubble("← 처음으로",""); b.onclick=()=>Scene.go("greeting"); p.appendChild(b);
+  $("scene").appendChild(p);
+};
+
+/* ---- FREE CHAT ---- */
+SCN.chat=async(my)=>{ frame("stage");
+  await say("좋아! H8에 대해서든, 여행이든— 뭐든 편하게 물어봐.");
+  const p=document.createElement("div");p.className="panel";
+  const inp=document.createElement("input");inp.className="nick-input";inp.placeholder="메시지를 입력해봐…";
+  const send=bubble("보내기","primary");
+  const back=bubble("← 처음으로","");
+  const go=()=>{const t=inp.value.trim();if(!t)return;inp.value="";try{SDK.sendMessage(t);}catch(e){}};
+  send.onclick=go; inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
+  back.onclick=()=>Scene.go("greeting");
+  const r=document.createElement("div");r.className="row";r.append(inp,send);
+  p.append(r,back);$("scene").appendChild(p);
+};
+
+/* ---- PASSPORT INTRO — 3D thick spin-in → slow reveal → open → grow-to-frame ---- */
+SCN.passportintro=async(my)=>{ frame("stage");
+  await say("좋아, 이제 어드벤처를 시작해볼까?"); if(!Scene.alive(my))return;
+  await say("여행자에겐 여권이 필요하지. 자, 여기 준비했어~"); if(!Scene.alive(my))return;
+  const pp=$("passport"); pp.classList.remove("tocam","open","slowspin","grow","spin-in");
+  Fold.sizePassport();   // fold = smaller passport
+  $("pp-serial").textContent=Store.serial; $("pp-meta").textContent="발급 · "+Store.date;
+  // gather particles AT THE PASSPORT (right-centre in fold), not screen-centre
+  FX.converge(...ppTarget(),{count:100,col:"200,180,255"});
+  await sleep(1000); if(!Scene.alive(my))return;
+  pp.classList.add("show","spin-in"); Sfx.chime();
+  FX.emit(...FX.center(pp),{count:34,speed:3,col:"210,190,255"});
+  await sleep(3400); if(!Scene.alive(my))return;     // slow 3D spin settles
+  pp.classList.remove("spin-in"); pp.classList.add("float");   // floating 3D tile — shows its navy edges
+  await say("자— 천천히, 여권을 열어볼게."); if(!Scene.alive(my))return;
+  await sleep(500); if(!Scene.alive(my))return;
+  pp.classList.add("open"); Sfx.chime();   // (keeps floating while the cover opens) FX.emit(...FX.center(pp),{count:28,speed:2.6,col:"210,190,255"});
+  await sleep(8600); if(!Scene.alive(my))return;      // cover opens VERY slowly & gradually (~10x)
+  await say("이제 여행자의 얼굴을 담아보자."); if(!Scene.alive(my))return;
+  await sleep(500); if(!Scene.alive(my))return;
+  // no zoom — the passport simply fades out and the camera scales in from centre
+  pp.classList.remove("show","open"); Sfx.whoosh(); await sleep(450); if(!Scene.alive(my))return;
+  Scene.go("camera1");
+};
+
+/* ---- CAMERA 1 ---- */
+SCN.camera1=async(my)=>{ $("passport").classList.remove("show","grow"); // no corner-zoom; camera scales in from center
+  say("카메라를 보고, 편하게 한 장 담아보자. 웃어도 좋아.");
+  Cam.open({titleTxt:"여권 사진",subTxt:"카메라를 보고 편하게 찍어줘",filterTheme:null,
+    done:(url)=>{ if(url){Store.selfie1=url;} Scene.go("celebrate1"); }});
+};
+
+/* ---- CELEBRATE 1 ---- */
+SCN.celebrate1=async(my)=>{ frame("stage");
+  const pp=$("passport");
+  if(Store.selfie1){ $("pp-photo").style.backgroundImage=`url(${Store.selfie1})`; $("pp-photo").classList.remove("empty"); }
+  pp.classList.add("show","open","float");   // booklet gently floats, showing its 3D page-edges
+  await sleep(600); if(!Scene.alive(my))return;
+  // stamp slam
+  $("pp-stamp1").classList.add("show"); FX.shake(5,140); Sfx.rumble();
+  FX.emit(...FX.center($("pp-stamp1")),{count:40,speed:4,col:"255,120,90"});
+  await say("좋아, 이제 진짜 여행자가 됐네."); if(!Scene.alive(my))return;
+  await sleep(700); if(!Scene.alive(my))return;
+  await say("자, 그럼 어디로 떠나볼까? 세계는 넓으니까."); if(!Scene.alive(my))return;
+  await sleep(700); pp.classList.remove("show","float"); await sleep(500); if(!Scene.alive(my))return;
+  Scene.go("destination");
+};
+
+/* ---- DESTINATION ORBS — floating orbital roulette (drag to spin) ---- */
+// blue/purple sphere gradients (distinct from each world's cinematic theme)
+const ORB_SPHERES=[
+  "radial-gradient(circle at 33% 27%,#efe8ff 0%,#b3a6ff 38%,#7161ee 68%,#3a2f9a)",
+  "radial-gradient(circle at 33% 27%,#e4edff 0%,#9fb4ff 38%,#5f74ee 68%,#2f3a9a)",
+  "radial-gradient(circle at 33% 27%,#f4e8ff 0%,#cfa6ff 38%,#9c61ee 68%,#5a2f9a)",
+  "radial-gradient(circle at 33% 27%,#e4f4ff 0%,#9fceff 38%,#5f9cee 68%,#2f5a9a)",
+  "radial-gradient(circle at 33% 27%,#f4e8ff 0%,#dba6ff 38%,#b06bee 68%,#6a2f9a)",
+];
+const ORBIT_DESTS=DEST.slice(0,3);   // only THREE bubbles in the orbit
+SCN.destination=async(my)=>{ frame("stage");
+  say("내가 아끼는 세 곳이야. 손으로 돌려서 골라봐— 룰렛처럼!",{replace:true});
+  const box=$("orbs"); box.innerHTML=""; box.style.pointerEvents="auto";
+  const orbEls=[]; const N=ORBIT_DESTS.length;
+  ORBIT_DESTS.forEach((d,i)=>{ const o=document.createElement("div");o.className="orb";
+    o.innerHTML=`<div class="world" style="background:${ORB_SPHERES[i%ORB_SPHERES.length]}"></div>`+
+      `<div class="oemblem">${d.emblem}</div><div class="oname">${d.name}</div>`;
+    box.appendChild(o); orbEls.push(o); });
+
+  const AUTO=0.0011;   // very slow auto-rotation
+  let angle=-Math.PI/2, vel=AUTO, dragging=false, lastX=0, moved=0, expanded=null, downOrb=null, scrollAcc=0;
+  const R=60; // half orb (120px) — a bit bigger
+  // GPU transform-only positioning (no left/top layout) → smooth, no rumble
+  // shared geometry (layout() + expand()/collapse() must agree, or the parked dots drift off the orbit)
+  function geom(){ const r=box.getBoundingClientRect();
+    const fold=document.body.classList.contains("phase-fold");   // fold phase: orbit lives in the RIGHT half, well below her chin/chest
+    return { r, fold, cx:r.width*(fold?0.75:0.5), cy:r.height*(fold?0.66:0.5),
+      rx:r.width*(fold?0.0875:0.235), ry:r.height*(fold?0.055:0.135) }; }
+  function layout(){
+    const {cx,cy,rx,ry}=geom();
+    orbEls.forEach((o,i)=>{ if(o===expanded)return;
+      const a=angle + i*(2*Math.PI/N);
+      const depth=(Math.sin(a)+1)/2;                // 0 back … 1 front (flat-disc feel)
+      const x=cx+Math.cos(a)*rx, y=cy+Math.sin(a)*ry*0.9 - 6;
+      const sc=0.72+depth*0.42;
+      o.style.transform=`translate3d(${(x-R).toFixed(2)}px,${(y-R).toFixed(2)}px,0) scale(${sc.toFixed(3)})`;
+      o.style.zIndex=String(10+Math.round(depth*12));
+      o.style.opacity=(0.6+depth*0.4).toFixed(2);
+    });
+  }
+  (function loop(){ if(!Scene.alive(my)){ box.style.pointerEvents="none"; return; }
+    if(!dragging && !expanded){ vel += (AUTO - vel) * 0.05; angle += vel; }  // smooth ease → no rumble
+    if(!expanded) layout();
+    requestAnimationFrame(loop);
+  })();
+
+  // extra sparkles + soft pop on first touch
+  function burst(o,strong){ const [bx,by]=FX.center(o);
+    FX.emit(bx,by,{count:strong?46:30,speed:strong?4:3,decay:.01,size:2.6,col:"235,220,255"});
+    FX.emit(bx,by,{count:strong?24:16,speed:strong?2.6:2,decay:.008,size:3.4,col:"200,170,255"});
+    o.classList.remove("touched"); void o.offsetWidth; o.classList.add("touched"); }
+  // true current CENTER of an orb relative to the box, however it's currently positioned (translate3d+scale OR left/top+scale)
+  function centerOf(el){ const rb=el.getBoundingClientRect(), rc=box.getBoundingClientRect();
+    return [rb.left-rc.left+rb.width/2, rb.top-rc.top+rb.height/2]; }
+  function expand(o,d){ expanded=o; orbEls.forEach(x=>x.classList.toggle("dim",x!==o));
+    o.classList.remove("dim"); o.style.opacity="1"; o.style.zIndex="30";
+    // freeze at current position, then animate to center via left/top
+    const [ox,oy]=centerOf(o);
+    o.style.transition="none"; o.style.left=(ox-R)+"px"; o.style.top=(oy-R)+"px"; o.style.transform="none";
+    void o.offsetWidth;
+    o.style.transition="left .55s var(--ease),top .55s var(--ease),width .55s var(--ease),height .55s var(--ease),transform .55s var(--ease)";
+    o.classList.add("expanded");
+    // the OTHER two orbs shrink into small parked dots, just below the expanded orb (down near its own height,
+    // not up near her shoulders/face) — side by side beside each other rather than either side of the big orb,
+    // since at this size the expanded orb already reaches close to the screen edge on both sides
+    const {cx,r}=geom(); const expandedHalf=Math.min(0.5*Math.min(r.width,r.height),105);   // matches CSS min(50vmin,210px)/2
+    const parkedHalf=R*0.42;                                            // matches the scale(.42) below
+    const expandedCenterY=r.height*0.60;
+    const parkY=expandedCenterY+expandedHalf+parkedHalf+15;
+    const offsetX=parkedHalf+8;
+    orbEls.filter(x=>x!==o).forEach((x,i)=>{ const [px0,py0]=centerOf(x);
+      x.style.transition="none"; x.style.left=(px0-R)+"px"; x.style.top=(py0-R)+"px"; x.style.transform="none";
+      void x.offsetWidth;
+      x.style.transition="left .55s var(--ease),top .55s var(--ease),transform .55s var(--ease),opacity .55s var(--ease)";
+      const tx=cx+(i===0?-offsetX:offsetX)-R, ty=parkY-R;
+      x.style.left=tx+"px"; x.style.top=ty+"px"; x.style.transform="scale(.42)"; x.style.opacity=".5"; x.style.zIndex="12"; });
+    burst(o,false); Sfx.chime(); say(`${d.name}: "${d.teaser}"`,{replace:true}); }
+  function collapse(){ if(!expanded)return; const o=expanded; o.classList.remove("expanded");
+    o.style.transition=""; o.style.left=""; o.style.top=""; o.style.width=""; o.style.height="";
+    orbEls.forEach(x=>{ if(x!==o){ x.style.transition=""; x.style.left=""; x.style.top=""; x.style.transform=""; x.style.opacity=""; x.style.zIndex=""; } });
+    expanded=null; orbEls.forEach(x=>x.classList.remove("dim")); }
+  function tap(o){ const d=ORBIT_DESTS[orbEls.indexOf(o)];
+    if(expanded!==o){ if(expanded)collapse(); expand(o,d); }
+    else { burst(o,true); Sfx.chime(); Sfx.sparkle();     // 2nd tap → beautiful bubble pop
+      o.classList.add("popsel"); Store.dest=d;
+      setTimeout(()=>{ if(Scene.alive(my)) Scene.go("departure"); },480); } }
+
+  box.onpointerdown=e=>{ box.setPointerCapture(e.pointerId); dragging=true; lastX=e.clientX; moved=0;
+    downOrb=e.target.closest(".orb"); };
+  box.onpointermove=e=>{ if(!dragging)return; const dx=e.clientX-lastX; lastX=e.clientX; moved+=Math.abs(dx);
+    if(!expanded){ vel=-dx*0.0055; angle+=vel;
+      scrollAcc+=Math.abs(dx); if(scrollAcc>34){ scrollAcc=0; Sfx.scroll(); } } };   // drag → spins + soft scroll tick
+  box.onpointerup=e=>{ if(!dragging)return; dragging=false;
+    if(moved<9 && downOrb){ tap(downOrb); }
+    else if(moved<9 && !downOrb && expanded){ collapse(); } };
+};
+
+/* ---- DEPARTURE (hype → warp behind character → countdown) ---- */
+SCN.departure=async(my)=>{ frame("stage"); const d=Store.dest;
+  $("environment").querySelector(".aurora").style.background=`conic-gradient(from 0deg at 50% 40%, ${d.world.match(/#\w+/g).join(",")})`;
+  // slow light-streaks begin BEHIND the character (step 7~8)
+  const w=$("warp"); w.classList.remove("show","fast"); void w.offsetWidth; w.classList.add("show","slow");
+  Sfx.whoosh();
+  await say(`${d.hype}`); if(!Scene.alive(my))return;
+  await say("자, 이제 출발할 준비를 해볼까? 곧 떠나는 거야."); if(!Scene.alive(my))return;
+  await sleep(900); if(!Scene.alive(my))return;
+  // countdown — the streaks SPEED UP (step 9)
+  w.classList.remove("slow"); void w.offsetWidth; w.classList.add("fast");
+  const c=$("count");
+  for(const n of ["3","2","1"]){ if(!Scene.alive(my))return; c.textContent=n;
+    c.classList.remove("show");void c.offsetWidth;c.classList.add("show"); Sfx.thunk();
+    { const rr=stage.getBoundingClientRect(); const fold=document.body.classList.contains("phase-fold");
+      FX.emit(rr.width*(fold?0.75:0.5), rr.height*0.42,{count:22,speed:4,col:"220,220,255"}); }
+    await sleep(1050); }
+  // device UNFOLD motion (the two halves open) before the world plays — slower & unhurried, with time to read the instruction
+  $("count").classList.remove("show");
+  $("unfold").classList.add("show","auto"); Sfx.whoosh();
+  await sleep(3800); if(!Scene.alive(my))return;
+  $("unfold").classList.remove("show","auto");
+  Scene.go("cinematic");
+};
+
+/* ---- UNFOLD WAIT ---- */
+SCN.unfoldwait=async(my)=>{ frame("stage"); $("unfold").classList.add("show");
+  await say("자, 여행자. 게이트를 열어줘— Galaxy를 활짝 펼치는 거야!");
+  let nudges=0;
+  (async function n(){ while(Scene.alive(my)&&nudges<2){ await sleep(12000);
+    if(!Scene.alive(my))break; nudges++; await say("펼치면— 바로 이륙이야!"); } })();
+};
+SCN.unfoldwait_posture=(s)=>{ if(s==="wide"){ $("unfold").classList.remove("show"); Scene.go("cinematic"); } };
+$("unfold-dev").onclick=()=>{ $("unfold").classList.remove("show"); Scene.go("cinematic"); };
+
+/* ---- CINEMATIC (wide) ---- */
+SCN.cinematic=async(my)=>{ Fold.allowWide(true);
+  document.body.classList.remove("phase-fold"); document.body.classList.add("phase-unfold"); Fold.sizePassport();  // THE UNFOLD: graphics can use both halves; passport back to full size
+  frame("stage"); const d=Store.dest;
+  $("warp").classList.remove("show","slow","fast"); $("count").classList.remove("show");
+  // LANDING explosion — stars + glitter burst
+  const bw=stage.getBoundingClientRect().width, bh=stage.getBoundingClientRect().height;
+  Sfx.thunk(); Sfx.sparkle();
+  FX.emit(bw/2,bh/2,{count:120,speed:10,decay:.01,size:3,col:"255,255,255"});
+  FX.emit(bw/2,bh/2,{count:70,speed:7,decay:.012,size:4,col:"255,225,150"});
+  FX.emit(bw/2,bh/2,{count:60,speed:6,decay:.012,size:3,col:"200,180,255"});
+  // unfold unlocks Wide Mode; cinematic scene
+  $("cine-scene").style.background=d.image
+    ? `center / cover no-repeat url("${d.image}")`
+    : d.world.replace("circle at 40% 30%","120% 60% at 50% 40%");
+  $("cine-layer").style.background=`repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 2px, transparent 2px 40px)`;
+  $("cine-name").textContent=d.name;
+  $("cine").classList.add("show");
+  await sleep(900); if(!Scene.alive(my))return;
+  await say(d.arrive); if(!Scene.alive(my))return;
+  await sleep(2600); if(!Scene.alive(my))return;
+  await say(`${d.name}, 정말 근사하지 않아?`);
+  await sleep(1500); if(!Scene.alive(my))return;   // total ≈ 5.5s widescreen moment
+  $("cine").classList.remove("show");
+  Scene.go("selfie2invite");
+};
+SCN.cinematic_posture=(s)=>{ if(s==="fold"){ say("어어, 문이 닫혔어! 다시 펼쳐줘~",{replace:true}); } };
+
+/* ---- SELFIE 2 INVITE ---- */
+SCN.selfie2invite=async(my)=>{ frame("stage"); const d=Store.dest;
+  document.body.classList.add("pp-split"); Fold.sizePassport();
+  $("pp-dest").textContent=d.name+" "+d.emblem;
+  const pp=$("passport"); pp.classList.add("show","open","float");   // passport floats on the LEFT — fills the empty space
+  await say("도착~! 기념사진 없이 돌아갈 순 없지."); if(!Scene.alive(my))return;
+  say(`${d.name} 여행자로 변신시켜줄게. 준비됐어?`);
+  const p=document.createElement("div");p.className="panel";
+  const b=bubble('<span class="ico">📸</span> 변신하고 찍기','primary pulse');
+  b.onclick=()=>Scene.go("camera2"); p.appendChild(b);$("scene").appendChild(p);
+};
+
+/* ---- CAMERA 2 (fullscreen filter) ---- */
+SCN.camera2=async(my)=>{ const d=Store.dest;
+  say(`${d.name} 필터를 적용했어. 넓은 화면 가득, 여유롭게 한 장 담아보자.`);
+  Cam.open({titleTxt:`${d.name} 와이드 셀피`,subTxt:`${d.name} 필터 · 넓은 배경까지 담아봐 ✨`,
+    wide:true, filterTheme:{filter:d.filter,tint:d.tint,emblem:d.emblem},
+    done:(url)=>{ if(url)Store.selfie2=url; Scene.go("celebrate2"); }});
+};
+
+/* ---- CELEBRATE 2 ---- */
+SCN.celebrate2=async(my)=>{ frame("stage"); const d=Store.dest; const pp=$("passport");
+  if(Store.selfie2){ $("pp-photo2").style.backgroundImage=`url(${Store.selfie2})`; $("pp-photo2").style.display="block"; }
+  $("pp-dest").textContent=d.name+" "+d.emblem;
+  $("pp-meta").textContent="여행 완료 · "+Store.date;
+  document.body.classList.add("pp-split");                 // passport → left 1/4, guide → right 3/4 (this beat only)
+  pp.classList.add("show","open","float"); await sleep(700); if(!Scene.alive(my))return;
+  $("pp-stamp2").classList.add("show"); FX.shake(6,180); Sfx.rumble(); Sfx.sparkle();
+  // confetti
+  const w=stage.getBoundingClientRect().width;
+  for(let i=0;i<5;i++){FX.emit(w*Math.random(),40,{count:16,speed:5,lift:-2,decay:.012,
+    col:["255,120,90","90,208,160","120,150,255","255,215,122"][i%4]});await sleep(60);}
+  await say(`와, 해냈어. ${d.name}까지 갔다 온 여행자, 바로 너야.`); if(!Scene.alive(my))return;
+  await sleep(700); if(!Scene.alive(my))return;
+  // passport stays floating right through this line — no hide/reappear ceremony, straight into the final reveal
+  await say("이제 너만의 증명서를 만들어줄게! 완성되면 QR 코드를 저장하거나 사진을 찍어서 직원에게 보여줘 — 작은 증정 상품이 기다리고 있어 🎁"); if(!Scene.alive(my))return;
+  await sleep(500); if(!Scene.alive(my))return;
+  document.body.classList.remove("pp-split");
+  Scene.go("reward");
+};
+
+/* ---- REWARD (final collectible + nickname + QR + save) ---- */
+SCN.reward=async(my)=>{ frame("stage"); const d=Store.dest;
+  // the floating passport (still up from celebrate2) is done being useful now — hide it explicitly rather than
+  // trusting it stays covered, since its own "서울 🏙️" destination label could bleed through while the big
+  // template image is still loading and .final-card hasn't finished painting an opaque background yet.
+  document.body.classList.remove("pp-split"); $("passport").classList.remove("show","open","float","tocam");
+  const f=$("final"); f.innerHTML="";
+  const card=document.createElement("div"); card.className="final-card";
+  card.style.backgroundImage=`url(${d.image})`;   // the destination's own template artwork IS the design now
+  const qid="qr"+Date.now(); const initNick = Store.nickname==="이름 모를 여행자" ? "" : Store.nickname;
+  card.innerHTML=`
+    <div class="fc-photo" style="background-image:url(${Store.selfie2||Store.selfie1||""})"></div>
+    <div class="fc-nick-mask" style="background:${d.paperBg}"></div>
+    <div class="fc-nick" id="fc-nick" contenteditable="true" style="color:${d.nameColor}">${initNick}</div>
+    <div class="fc-qr"><canvas id="${qid}" width="132" height="132"></canvas></div>`;
+  const done=document.createElement("button"); done.className="stampbtn fc-done"; done.textContent="미션 끝 ✦";
+  card.appendChild(done);   // sits ON the paper (bottom-centre), never in a cut-off row below
+  f.appendChild(card);
+  f.classList.add("show");
+  drawQR($(qid),Math.floor(performance.now()));
+  await say("나만의 갤럭시 여권 완성! 이름을 눌러서 직접 적어봐."); if(!Scene.alive(my))return;
+  await say("저장은 걱정 마— QR 코드를 스캔하거나, 사진으로 찰칵 남기면 돼!");
+  const nk=$("fc-nick");
+  nk.addEventListener("input",()=>{ const v=nk.textContent.trim(); Store.nickname=v||"이름 모를 여행자"; });
+  // exit passport → stay in WIDE mode until the device is folded back (Feature 2)
+  done.onclick=()=>{ stopStayTimer(); f.classList.remove("show"); Scene.go("foldback"); };
+  startStayTimer(my); // passport-mode idle: 45s → 20s countdown → home
+};
+
+/* ---- FOLD-BACK: stay wide → invite conversation → after idle, ask to fold ---- */
+SCN.foldback=async(my)=>{ frame("stage");
+  stopStayTimer();
+  wipe(); $("passport").classList.remove("show","tocam","open","float"); $("final").classList.remove("show"); document.body.classList.remove("pp-split");
+  await say("오늘 정말 멋진 여행이었어— 즐거웠어, 여행자!"); if(!Scene.alive(my))return;
+  await say("다음 여행자를 위해, 이제 H8을 접어줘. 접으면 처음 화면으로 돌아갈게!"); if(!Scene.alive(my))return;
+  $("foldback").classList.add("show");   // show the "접어주세요" fold-back graphic — wait until it's folded
+  // ONCE FOLDED → home. (real device: physical fold; here: tap the graphic, or the dev button)
+  $("foldback").onclick=(e)=>{ if(e.target.id==="foldback-dev")return; $("foldback").classList.remove("show"); $("foldback").onclick=null; doReset(); };
+};
+SCN.foldback_posture=(s)=>{ if(s==="fold"){ $("foldback").classList.remove("show"); $("foldback").onclick=null; doReset(); } };
+$("foldback-dev").onclick=()=>{ $("foldback").classList.remove("show"); $("foldback").onclick=null; doReset(); };
+
+/* ---- helpers ---- */
+function roundRect(x,rx,ry,rw,rh,r){x.beginPath();x.moveTo(rx+r,ry);x.arcTo(rx+rw,ry,rx+rw,ry+rh,r);
+  x.arcTo(rx+rw,ry+rh,rx,ry+rh,r);x.arcTo(rx,ry+rh,rx,ry,r);x.arcTo(rx,ry,rx+rw,ry,r);x.closePath();}
+const loadImg=src=>new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});
+function coverDraw(x,im,dx,dy,dw,dh){const ar=im.width/im.height,tr=dw/dh;let sw=im.width,sh=im.height,sx=0,sy=0;
+  if(ar>tr){sw=im.height*tr;sx=(im.width-sw)/2;}else{sh=im.width/tr;sy=(im.height-sh)/2;}x.drawImage(im,sx,sy,sw,sh,dx,dy,dw,dh);}
+
+/* ---- 4K WIDE passport export (§0-Q): pfp+name header, wide selfie2 below ---- */
+async function exportPassport(d){
+  const W=3840,H=2160,HDR=560,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,"#1b3e7a");g.addColorStop(.6,"#0e2350");g.addColorStop(1,"#0a1a3f");
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  // body: wide selfie2 fills below header
+  const s2=await loadImg(Store.selfie2);
+  if(s2)coverDraw(x,s2,0,HDR,W,H-HDR); else {x.fillStyle="#0a1530";x.fillRect(0,HDR,W,H-HDR);}
+  // header band
+  x.fillStyle="rgba(14,35,80,.9)";x.fillRect(0,0,W,HDR);
+  x.fillStyle="#ffd77a";x.fillRect(0,HDR-8,W,8);
+  // round pfp (selfie1)
+  const s1=await loadImg(Store.selfie1),px=120,py=110,ps=340;
+  x.save();roundRect(x,px,py,ps,ps,60);x.clip();
+  if(s1)coverDraw(x,s1,px,py,ps,ps); else {x.fillStyle="#123";x.fillRect(px,py,ps,ps);} x.restore();
+  x.strokeStyle="#ffd77a";x.lineWidth=12;roundRect(x,px,py,ps,ps,60);x.stroke();
+  // header text
+  const tx=px+ps+64;
+  x.fillStyle="#ffd77a";x.font="bold 44px sans-serif";x.fillText("GALAXY PASSPORT",tx,205);
+  x.fillStyle="#fff";x.font="900 108px sans-serif";x.fillText(Store.nickname,tx,330);
+  x.fillStyle="#a9b8d6";x.font="46px sans-serif";x.fillText(Store.serial+" · 여행 완료 "+Store.date,tx,415);
+  x.font="150px serif";x.fillText(d.emblem,W-320,340);
+  // ribbon
+  x.fillStyle="#ffd77a";x.fillRect(0,HDR+50,1040,120);x.fillStyle="#3a2a00";x.font="bold 62px sans-serif";
+  x.fillText("TRAVEL COMPLETE · "+d.name,50,HDR+130);
+  // ARRIVAL stamp on the wide selfie
+  x.save();x.translate(W-620,HDR+340);x.rotate(-0.16);x.strokeStyle="#5ad0a0";x.fillStyle="#5ad0a0";x.lineWidth=14;
+  roundRect(x,-230,-90,460,180,24);x.stroke();x.font="bold 100px sans-serif";x.fillText("ARRIVAL ✦",-210,35);x.restore();
+  // world emblem stamp (kept clear of the QR zone bottom-right)
+  x.save();x.translate(W-380,H-780);x.rotate(0.15);x.font="240px serif";x.fillText(d.emblem,-120,90);x.restore();
+  // QR + staff + serial
+  const qc=document.createElement("canvas");qc.width=qc.height=360;drawQR(qc,777);x.drawImage(qc,W-440,H-440,360,360);
+  x.strokeStyle="rgba(255,255,255,.6)";x.setLineDash([18,14]);x.lineWidth=6;x.beginPath();x.arc(210,H-210,120,0,6.28);x.stroke();x.setLineDash([]);
+  x.fillStyle="#eee";x.font="40px sans-serif";x.fillText("STAFF ✓",135,H-200);
+  const url=c.toDataURL("image/png");
+  const a=document.createElement("a");a.href=url;a.download=`GalaxyPassport_${Store.nickname}_${d.name}.png`;a.click();
+  say("저장했어! 4K 와이드 여권, 그대로야. 직원에게 보여줘!",{replace:true});
+}
+
+/* ============================================================
+   BOOT SEQUENCE
+   ============================================================ */
+(async function init(){
+  document.body.classList.toggle("cam-guide", CFG.camGuide);
+  Fold.apply();
+  try{
+    const opt={sdk_key:CFG.sdkKey,avatar_id:CFG.avatarId,log_level:"warn",language:"ko_kr"};
+    if(CFG.adlp)opt.execution_type="adlp_worker";
+    await SDK.init(opt);
+  }catch(e){ $("splash-tag").textContent="연결 실패: "+e.message; return; }
+  watchAvatarSize();   // detect the stream's native size → match the frame to it (no crop)
+  Scene.go("boot");
+})();
+window.addEventListener("beforeunload",()=>{try{SDK.destroy();}catch(e){}});
+</script>
+</body>
+</html>

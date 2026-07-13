@@ -1,0 +1,17 @@
+{
+  "name": "galaxy-passport",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Klleon Digital Human × Samsung Galaxy Fold flagship experience (static, deployable).",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node serve.mjs",
+    "dev": "node serve.mjs . 9292",
+    "build:vite": "vite build",
+    "dev:vite": "vite"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
