@@ -643,6 +643,86 @@
   body.in-work .vintro{ font:400 clamp(.95rem,1.15vw,1.05rem)/1.6 var(--disp); max-width:66ch; margin-bottom:clamp(24px,4vh,40px); color:#b9bec8; }
   body.in-work .vintro b{ font-weight:600; color:#fff; padding:1px 5px; border-radius:4px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
   body.in-work .vintro .hl1{ background:rgba(255,107,74,.22); } body.in-work .vintro .hl2{ background:rgba(79,124,255,.26); } body.in-work .vintro .hl3{ background:rgba(31,174,106,.24); }
+  /* work: cards deal in once as they scroll into view */
+  @media (prefers-reduced-motion:no-preference){
+    body.in-work .wgrid.anim .wcard{ opacity:0; translate:0 24px; transition:opacity .7s ease var(--d,0ms), translate .8s cubic-bezier(.2,.7,.2,1) var(--d,0ms), transform .25s ease, border-color .25s ease; }
+    body.in-work .wgrid.anim .wcard.in{ opacity:1; translate:none; }
+    body.in-work .wgrid.anim .wc-shp{ transform:scale(0) rotate(-90deg); transition:transform .6s cubic-bezier(.3,1.35,.5,1) calc(var(--d,0ms) + 220ms); }
+    body.in-work .wgrid.anim .wcard.in .wc-shp{ transform:none; }
+  }
+  @media print{ body.in-work .wgrid.anim .wcard{ opacity:1; translate:none; transition:none; } body.in-work .wgrid.anim .wc-shp{ transform:none; transition:none; } }
+  /* work: career timeline ribbon above the grid */
+  body.in-work .wt{ --lc:230px; --g:16px; margin:0 0 clamp(24px,4vh,40px); padding:16px clamp(14px,1.8vw,22px) 12px; background:#16181e; border:1px solid #262a33; border-radius:16px; }
+  body.in-work .wt-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin-bottom:10px; font:600 13px/1.3 var(--disp); color:#fff; }
+  body.in-work .wt-h span{ font-weight:500; color:#8b92a0; }
+  body.in-work .wt-rows{ position:relative; }
+  body.in-work .wt-ticks{ position:absolute; top:0; bottom:0; left:calc(var(--lc) + var(--g)); right:0; pointer-events:none; }
+  body.in-work .wt-tick{ position:absolute; top:0; bottom:0; width:1px; background:#23272f; }
+  body.in-work .wt-row{ position:relative; display:grid; grid-template-columns:var(--lc) 1fr; column-gap:var(--g); align-items:center; width:100%; min-height:26px; padding:3px 0; border-radius:8px; text-align:left; font:500 13px/1.25 var(--disp); color:#aab0bb; transition:color .25s ease; }
+  body.in-work .wt-lbl{ display:flex; align-items:center; min-width:0; }
+  body.in-work .wt-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.in-work .wt-shp{ width:10px; height:10px; margin-right:8px; color:var(--wc); }
+  body.in-work .wt-track{ position:relative; height:8px; }
+  body.in-work .wt-bar{ position:absolute; top:0; bottom:0; min-width:6px; border-radius:999px; background:var(--wc); transform-origin:left center; transition:opacity .3s ease; }
+  body.in-work .wt-row.lit{ color:#fff; }
+  body.in-work .wt-rows:has(.wt-row.lit) .wt-row:not(.lit) .wt-bar{ opacity:.28; }
+  body.in-work .wt-row:focus-visible{ outline:2px solid var(--wc); outline-offset:2px; }
+  body.in-work .wt-ax{ position:relative; height:14px; margin:6px 0 0 calc(var(--lc) + var(--g)); font:500 11px/14px var(--disp); color:#8b92a0; }
+  body.in-work .wt-ax span{ position:absolute; top:0; transform:translateX(-50%); }
+  body.in-work .wcard.lit{ border-color:var(--wc); }
+  @media (max-width:600px){ body.in-work .wt{ --lc:46%; --g:10px; } body.in-work .wt-row{ font-size:12px; } body.in-work .wt-lbl{ align-items:flex-start; } body.in-work .wt-shp{ margin-top:2px; } body.in-work .wt-name{ white-space:normal; } }
+  @media (prefers-reduced-motion:no-preference){ body.in-work .wt-bar{ animation:wtGrow .8s cubic-bezier(.2,.7,.2,1) calc(200ms + var(--k,0) * 50ms) both; } @keyframes wtGrow{ from{ transform:scaleX(0); } } }
+  @media (prefers-reduced-motion:reduce){ body.in-work .wt-row, body.in-work .wt-bar{ transition:none; } }
+  /* work panel: carries the card's colour and shape, short staggered build */
+  body.in-work #wdrawer:not(.pcase) .wd-panel{ border-left-color:var(--wc,#262a33); }
+  body.in-work #wdrawer:not(.pcase) .vlbl, body.in-work #wdrawer:not(.pcase) .wd-csk{ color:var(--wc,#7f9bff); }
+  body.in-work #wdrawer:not(.pcase) .wd-shp{ width:.6em; height:.6em; margin-right:.3em; vertical-align:.02em; color:var(--wc); }
+  body.in-work #wdrawer:not(.pcase) .wd-cs{ position:relative; padding-top:14px; }
+  body.in-work #wdrawer:not(.pcase) .wd-cs::before{ content:""; position:absolute; left:0; right:0; top:0; height:1px; background:var(--wc,#262a33); transform-origin:left center; }
+  @media (prefers-reduced-motion:no-preference){
+    @keyframes wdUp{ from{ opacity:0; translate:0 12px; } }
+    @keyframes wdPop{ from{ transform:scale(0) rotate(-90deg); } }
+    @keyframes wdRule{ from{ transform:scaleX(0); } }
+    body.in-work #wdrawer.on:not(.pcase):not(.flip) #wdBody > :not(.wd-long), body.in-work #wdrawer.on:not(.pcase):not(.flip) .wd-cs{ animation:wdUp .45s cubic-bezier(.2,.7,.2,1) calc(100ms + var(--i,0) * 35ms) both; }
+    body.in-work #wdrawer.on:not(.pcase):not(.flip) .wd-cs::before{ animation:wdRule .6s cubic-bezier(.2,.7,.2,1) calc(200ms + var(--i,0) * 35ms) both; }
+    body.in-work #wdrawer.on:not(.pcase) .wd-shp{ animation:wdPop .55s cubic-bezier(.3,1.35,.5,1) 160ms both; }
+  }
+  /* work panel: flip-through footer with a shape rail */
+  .wd-step{ display:none; }
+  body.in-work #wdrawer:not(.pcase) .wd-step{ position:sticky; bottom:calc(-1 * clamp(22px,3vw,46px)); z-index:2; display:flex; align-items:center; gap:10px; margin:clamp(28px,4vh,40px) calc(-1 * clamp(22px,3vw,46px)) calc(-1 * clamp(22px,3vw,46px)); padding:10px clamp(22px,3vw,46px); background:#12141a; border-top:1px solid #262a33; }
+  body.in-work .wd-sb{ flex:1 1 0; min-width:0; min-height:44px; display:flex; align-items:center; gap:8px; padding:0 14px; border:1px solid #2c313b; border-radius:999px; background:#1a1d24; font:500 13px/1.2 var(--disp); color:#e3e6eb; transition:border-color .25s ease; }
+  body.in-work .wd-sb.wd-nx{ justify-content:flex-end; }
+  body.in-work .wd-sn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.in-work .wd-sa{ flex:none; }
+  body.in-work .wd-sb:hover{ border-color:var(--wc); }
+  body.in-work .wd-rail{ display:flex; flex:none; }
+  body.in-work .wd-rd{ width:24px; height:24px; display:grid; place-items:center; border:1px solid transparent; border-radius:7px; color:var(--wc); opacity:.4; transition:opacity .25s ease, border-color .25s ease; }
+  body.in-work .wd-rd .pp-shp{ width:12px; height:12px; margin:0; color:inherit; }
+  body.in-work .wd-rd:hover, body.in-work .wd-rd[aria-current]{ opacity:1; }
+  body.in-work .wd-rd[aria-current]{ border-color:var(--wc); }
+  body.in-work :is(.wd-sb, .wd-rd):focus-visible{ outline:2px solid var(--wc); outline-offset:2px; opacity:1; }
+  .wd-live{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  body.in-work .wcard.wc-back{ animation:wcBack 1.4s ease-out 1; }
+  @keyframes wcBack{ 0%, 35%{ border-color:var(--wc); } }
+  @media (max-width:600px){ body.in-work #wdrawer:not(.pcase) .wd-step{ gap:4px; } body.in-work .wd-sn{ display:none; } body.in-work #wdrawer:not(.pcase) .wd-step{ padding:8px 14px; } body.in-work .wd-sb, body.in-work .wd-sb.wd-nx{ min-width:44px; padding:0; justify-content:center; } body.in-work .wd-rd{ width:20px; } }
+  @media (prefers-reduced-motion:reduce){ body.in-work .wcard.wc-back{ animation:none; } body.in-work .wd-sb, body.in-work .wd-rd{ transition:none; } }
+  /* work cards: each title shape moves its own way on hover, focus or timeline highlight */
+  @media (prefers-reduced-motion:no-preference){
+    body.in-work .wc-shp svg{ transition:transform .7s cubic-bezier(.3,1.5,.5,1); }
+    body.in-work .wc-shp.s3 svg{ transform-origin:50% 75%; }
+    body.in-work .wc-shp.s4 svg{ transform-origin:50% 62.5%; }
+    body.in-work .wcard:is(:hover,:focus-visible,.lit) .s0 svg{ transform:scale(1.2); }
+    body.in-work .wcard:is(:hover,:focus-visible,.lit) :is(.s1,.s5) svg{ transform:rotate(90deg); }
+    body.in-work .wcard:is(:hover,:focus-visible,.lit) .s2 svg{ transform:rotate(72deg); }
+    body.in-work .wcard:is(:hover,:focus-visible,.lit) .s3 svg{ transform:rotate(-16deg); }
+    body.in-work .wcard:is(:hover,:focus-visible,.lit) .s4 svg{ transform:rotate(120deg); }
+    body.in-work .wcard:is(:hover,:focus-visible,.lit) .s6 svg{ transform:scaleX(1.2); }
+  }
+  @media (prefers-reduced-motion:reduce){ body.in-work .wcard{ transition:none; } }
+  /* work cards: "Now" pill with a slow live dot on ongoing roles */
+  body.in-work .wc-year.is-live{ display:inline-flex; align-items:center; gap:6px; }
+  body.in-work .wc-live{ width:6px; height:6px; flex:none; border-radius:50%; background:#fff; }
+  @media (prefers-reduced-motion:no-preference){ body.in-work .wc-live{ animation:wcLive 3s ease-in-out 3; } @keyframes wcLive{ 50%{ opacity:.3; } } }
 
   /* bigger hero illustration */
   @media (min-width:1025px){ .pp-hero{ min-height:clamp(480px,46vw,680px); } .pp-deco{ width:clamp(320px, calc(100% - 650px), 640px); right:-1%; } }
@@ -831,9 +911,11 @@ const SITE = {
   lb.addEventListener("click", e => { if (e.target === lb) lbCloseFn(); });
 
   const wdrawer = $("wdrawer"), wdBody = $("wdBody");
-  function openWork(w, prod) {
+  function openWork(w, prod, dir) {
     overlayOpen();
     wdrawer.classList.remove("pcase"); $("wdX").textContent = "✕"; $("wdX").setAttribute("aria-label", "Close");
+    const idx = Math.max(0, (prod ? SITE.product : SITE.work).indexOf(w)); wdrawer.style.setProperty("--wc", PC[idx % PC.length]);
+    wdrawer.classList.toggle("flip", !!dir); if (!prod) syncStep(idx, !!dir);
     wdBody.innerHTML = "";
     const lbl2 = el("div", "vlbl"); lbl2.appendChild(el("span", "", prod ? "( product )" : "( work )")); wdBody.appendChild(lbl2);
     const wt = el("h2", "wd-title", w.title); wt.id = "wdTitle"; wdBody.appendChild(wt);
@@ -845,9 +927,12 @@ const SITE = {
     if (w.img) { const wi = el("div", "wd-img"); const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; wi.appendChild(im); wdBody.appendChild(wi); }
     (w.extra || []).forEach(g => { const f = el("figure", "wd-extra"); const im = doc.createElement("img"); im.src = g[0]; im.alt = g[1]; im.loading = "lazy"; f.appendChild(im); f.appendChild(el("figcaption", "wd-cap", g[1])); wdBody.appendChild(f); });
     const lg = el("div", "wd-long"); (prod ? ["The problem", "What I built", "The outcome"] : ["The problem", "What I did", "The result"]).forEach((k, i) => { const sec = el("div", "wd-cs"); sec.appendChild(el("span", "wd-csk", pad2(i + 1) + " / " + k)); sec.appendChild(el("p", "", w.cs[i])); lg.appendChild(sec); }); wdBody.appendChild(lg);
+    wt.prepend(shp(idx, "pp-shp wd-shp"));
+    Array.prototype.forEach.call(wdBody.children, (n, i) => n.style.setProperty("--i", Math.min(i, 6))); lg.querySelectorAll(".wd-cs").forEach((s, j) => s.style.setProperty("--i", 5 + j));
     wdrawer.hidden = false; requestAnimationFrame(() => wdrawer.classList.add("on")); body.style.overflow = "hidden";
     wdrawer.querySelector(".wd-panel").scrollTop = 0;
-    $("wdX").focus();
+    if (dir) { wdrawer._from = doc.querySelector('.wcard[data-i="' + idx + '"]') || wdrawer._from; if (!REDUCE_MOTION) wdBody.animate([{ opacity: 0, transform: "translateX(" + dir * 24 + "px)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,.8,.2,1)" }); }
+    else $("wdX").focus();
   }
   const GIC = {
     "My role": '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.2" fill="currentColor"/><path d="M4 21a8 8 0 0 1 16 0z" fill="currentColor"/></svg>',
@@ -904,7 +989,8 @@ const SITE = {
   function closeWork(fromNav) {
     if (!wdrawer.classList.contains("on") && wdrawer.hidden) return;
     bgInert(false);
-    if (wdrawer._from && wdrawer._from.focus) { wdrawer._from.focus(); wdrawer._from = null; }
+    const f = wdrawer._from; wdrawer._from = null;
+    if (f && f.focus) { const card = !!(f.classList && f.classList.contains("wcard")); f.focus({ preventScroll: card }); if (card) { const land = () => { const r = f.getBoundingClientRect(); if (r.top < 64 || r.top > window.innerHeight * .75) f.scrollIntoView({ block: "center", behavior: REDUCE_MOTION ? "auto" : "smooth" }); f.classList.remove("wc-back"); void f.offsetWidth; f.classList.add("wc-back"); }; if (fromNav !== true && history.state && history.state.ov) window.addEventListener("popstate", () => requestAnimationFrame(land), { once: true }); else requestAnimationFrame(land); } }
     wdrawer.classList.remove("on");
     clearTimeout(wdrawer._t); wdrawer._t = setTimeout(() => { if (!wdrawer.classList.contains("on")) wdrawer.hidden = true; }, 420);
     if (!lb.classList.contains("on")) body.style.overflow = "";
@@ -944,6 +1030,50 @@ const SITE = {
     "Leads to": '<svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   const shp = (i, cls) => { const sp = el("span", cls || "pp-shp"); sp.setAttribute("aria-hidden", "true"); sp.innerHTML = PSH[i % PSH.length]; return sp; };
+  const wdStep = el("nav", "wd-step"), wdPrev = el("button", "wd-sb"), wdNext = el("button", "wd-sb wd-nx"), wdRail = el("div", "wd-rail"), wdLive = el("span", "wd-live");
+  let wdIdx = 0;
+  wdStep.setAttribute("aria-label", "Browse experiences"); wdLive.setAttribute("aria-live", "polite"); wdPrev.type = wdNext.type = "button";
+  SITE.work.forEach((w, i) => { const d = el("button", "wd-rd"); d.type = "button"; d.style.setProperty("--wc", PC[i % PC.length]); d.setAttribute("aria-label", w.title + ", " + (i + 1) + " of " + SITE.work.length); d.appendChild(shp(i, "pp-shp")); d.addEventListener("click", () => stepTo(i, i > wdIdx ? 1 : -1)); wdRail.appendChild(d); });
+  wdPrev.addEventListener("click", () => stepTo(wdIdx - 1, -1)); wdNext.addEventListener("click", () => stepTo(wdIdx + 1, 1));
+  wdStep.append(wdPrev, wdRail, wdNext, wdLive); wdrawer.querySelector(".wd-panel").appendChild(wdStep);
+  function stepTo(i, dir) { const n = SITE.work.length; i = (i + n) % n; if (i !== wdIdx) openWork(SITE.work[i], false, dir); }
+  function syncStep(i, say) {
+    const n = SITE.work.length, P = SITE.work[(i - 1 + n) % n], N = SITE.work[(i + 1) % n]; wdIdx = i;
+    wdPrev.replaceChildren(el("span", "wd-sa", "←"), el("span", "wd-sn", P.title)); wdPrev.setAttribute("aria-label", "Previous: " + P.title);
+    wdNext.replaceChildren(el("span", "wd-sn", N.title), el("span", "wd-sa", "→")); wdNext.setAttribute("aria-label", "Next: " + N.title);
+    Array.prototype.forEach.call(wdRail.children, (d, k) => { if (k === i) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current"); });
+    wdLive.textContent = say ? (i + 1) + " of " + n + ", " + SITE.work[i].title : "";
+  }
+  const MO = "JanFebMarAprMayJunJulAugSepOctNovDec";
+  const monthOf = (m, y) => +y * 12 + MO.indexOf(m) / 3;
+  const monthName = t => MO.substr((t % 12) * 3, 3) + " " + Math.floor(t / 12);
+  function spans(w) { const d = new Date(), now = d.getFullYear() * 12 + d.getMonth(); return [...String(w.date || "").matchAll(/(\w{3}) (\d{4}) to (?:(\w{3}) (\d{4})|Present)/g)].map(r => [monthOf(r[1], r[2]), r[3] ? monthOf(r[3], r[4]) : now]); }
+  function workRibbon(list, cards) {
+    const rows = list.map((w, i) => ({ w, i, s: spans(w) })).filter(r => r.s.length).sort((a, b) => a.s[0][0] - b.s[0][0]);
+    if (!rows.length) return null;
+    const t0 = rows[0].s[0][0], t1 = Math.max(...rows.map(r => Math.max(...r.s.map(s => s[1])))) + 1, pct = v => ((v - t0) / (t1 - t0) * 100).toFixed(2) + "%";
+    const live = rows.filter(r => /Present/.test(r.w.date)).length;
+    const box = el("div", "wt");
+    const h = el("p", "wt-h", "Timeline"); h.appendChild(el("span", "", rows.length + " roles · " + monthName(t0) + " to " + (live ? "now · " + live + " ongoing" : monthName(t1 - 1)))); box.appendChild(h);
+    const rs = el("div", "wt-rows"); rs.setAttribute("role", "group"); rs.setAttribute("aria-label", "Career timeline, use the up and down arrow keys to move between roles");
+    const ticks = el("div", "wt-ticks"), ax = el("div", "wt-ax"); ticks.setAttribute("aria-hidden", "true"); ax.setAttribute("aria-hidden", "true"); rs.appendChild(ticks);
+    for (let y = Math.ceil(t0 / 12); y * 12 < t1; y++) { const tk = el("span", "wt-tick"); tk.style.left = pct(y * 12); ticks.appendChild(tk); const yl = el("span", "", String(y)); yl.style.left = pct(y * 12); ax.appendChild(yl); }
+    rows.forEach((r, k) => {
+      const b = el("button", "wt-row"); b.type = "button"; b.tabIndex = k ? -1 : 0; b.style.setProperty("--wc", PC[r.i % PC.length]); b.setAttribute("aria-label", r.w.title + ", " + r.w.date);
+      const lb = el("span", "wt-lbl"); lb.appendChild(shp(r.i, "pp-shp wt-shp")); lb.appendChild(el("span", "wt-name", r.w.title)); b.appendChild(lb);
+      const tr = el("span", "wt-track"); r.s.forEach(s => { const bar = el("span", "wt-bar"); bar.style.left = "min(" + pct(s[0]) + ", calc(100% - 6px))"; bar.style.width = pct(t0 + s[1] + 1 - s[0]); bar.style.setProperty("--k", k); tr.appendChild(bar); }); b.appendChild(tr);
+      const c = cards[r.i], lit = on => { b.classList.toggle("lit", on); if (c) c.classList.toggle("lit", on); };
+      b.addEventListener("pointerenter", () => lit(true)); b.addEventListener("pointerleave", () => lit(false));
+      b.addEventListener("focus", () => lit(true)); b.addEventListener("blur", () => lit(false));
+      if (c) { c.addEventListener("pointerenter", () => lit(true)); c.addEventListener("pointerleave", () => lit(false)); }
+      b.addEventListener("click", () => { b.focus(); openWork(r.w, false); });
+      rs.appendChild(b);
+    });
+    rs.addEventListener("focusin", e => rs.querySelectorAll(".wt-row").forEach(x => { x.tabIndex = x === e.target ? 0 : -1; }));
+    rs.addEventListener("keydown", e => { const bs = [...rs.querySelectorAll(".wt-row")], i = bs.indexOf(doc.activeElement), j = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: bs.length - 1 }[e.key]; if (i < 0 || !(j >= 0 && j < bs.length)) return; e.preventDefault(); bs[j].focus(); });
+    box.appendChild(rs); box.appendChild(ax);
+    return box;
+  }
   const STAGES = [
     ["Discover", "Learning what users do before deciding anything.", [["VivaTech Conversation Analysis", "VivaTech conversation logs analyzed"], ["Lab Platform Navigation Study", "1:1 think-aloud sessions, in progress"]]],
     ["Define", "Turning a vague ask into a clear problem and goals.", [["Glow Buddy", "founder's goal turned into a customer problem"], ["Booth Host Kiosk", "one-line brief turned into 4 goals"]]],
@@ -1022,13 +1152,15 @@ const SITE = {
     box.appendChild(head(id, false));
     const et = el("h2", "exp-title work-exp f-archivo-wide"); const eti = el("span", "exp-in"); eti.appendChild(el("span", "exp-base", word)); et.appendChild(eti); box.appendChild(et); fitSoon(eti);
     const vi = el("p", "vintro"); vi.innerHTML = SITE.workIntro; box.appendChild(vi);
-    const grid = el("div", "wgrid");
+    const grid = el("div", "wgrid"), cards = [];
+    const anim = !REDUCE_MOTION && "IntersectionObserver" in window; if (anim) grid.classList.add("anim");
     (prod ? SITE.product : SITE.work).forEach(w => {
       const wi = (prod ? SITE.product : SITE.work).indexOf(w);
-      const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.style.setProperty("--wc", PC[wi % PC.length]);
+      const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.style.setProperty("--wc", PC[wi % PC.length]); c.dataset.i = wi;
+      c.style.setProperty("--d", (wi % 2) * 90 + "ms");
       const imgw = el("div", "wcard-img"); if (w.img) { const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; im.loading = "lazy"; imgw.appendChild(im); } else { const ph = el("div", "wcard-ph"); const kx = w.title.length % PSH.length; ph.style.color = PC[kx % PC.length]; ph.innerHTML = PSH[kx]; imgw.appendChild(ph); } c.appendChild(imgw);
       const b = el("div", "wcard-body");
-      const top = el("div", "wc-top"); const ttl = el("h3", "wc-title"); ttl.appendChild(shp(wi, "pp-shp wc-shp")); ttl.appendChild(doc.createTextNode(w.title)); top.appendChild(ttl); top.appendChild(el("span", "wc-year", w.status || w.year)); b.appendChild(top);
+      const top = el("div", "wc-top"); const ttl = el("h3", "wc-title"); ttl.appendChild(shp(wi, "pp-shp wc-shp s" + (wi % PSH.length))); ttl.appendChild(doc.createTextNode(w.title)); top.appendChild(ttl); const live = /Present/.test(w.date || ""), yr = el("span", "wc-year" + (live ? " is-live" : ""), live ? "Now" : (w.status || w.year)); if (live) { const dot = el("span", "wc-live"); dot.setAttribute("aria-hidden", "true"); yr.prepend(dot); } top.appendChild(yr); b.appendChild(top);
       if (w.role) b.appendChild(el("p", "wc-role", w.role + (w.date ? " · " + w.date : "")));
       b.appendChild(el("p", "wc-desc", w.desc));
       if (prod && w.stats) { const st = el("div", "wc-stat"); st.appendChild(el("span", "wc-num", w.stats[0][0])); st.appendChild(el("span", "wc-lbl", w.stats[0][1])); b.appendChild(st); }
@@ -1036,9 +1168,11 @@ const SITE = {
       c.appendChild(b);
       c.addEventListener("click", () => openWork(w, prod));
       c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openWork(w, prod); } });
-      grid.appendChild(c);
+      grid.appendChild(c); cards[wi] = c;
     });
+    if (!prod) { const wt = workRibbon(SITE.work, cards); if (wt) box.appendChild(wt); }
     box.appendChild(grid);
+    if (anim) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" }); grid.querySelectorAll(".wcard").forEach(c => { io.observe(c); c.addEventListener("focus", () => c.classList.add("in"), { once: true }); }); }
     box.appendChild(contactStrip());
   }
 
@@ -1169,6 +1303,7 @@ const SITE = {
   doc.addEventListener("keydown", e => {
     if (e.key === "Escape") { if (lb.classList.contains("on")) lbCloseFn(); else if (wdrawer.classList.contains("on")) closeWork(); else if (current !== "") location.hash = "#/"; }
     else if (lb.classList.contains("on")) { if (e.key === "ArrowLeft") lbShift(-1); else if (e.key === "ArrowRight") lbShift(1); }
+    else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !e.repeat && !e.altKey && !e.metaKey && !e.ctrlKey && current === "work" && wdrawer.classList.contains("on") && !wdrawer.classList.contains("pcase")) { e.preventDefault(); const d = e.key === "ArrowLeft" ? -1 : 1; stepTo(wdIdx + d, d); }
   });
 
   const skillsEl = $("skills"), hfoot = $("hfoot");
