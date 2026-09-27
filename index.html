@@ -595,6 +595,50 @@
   #lbCap{ margin-top:10px; font:500 10.5px/1 var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--dim); }
   [hidden]{ display:none !important; }
   @media (prefers-reduced-motion: reduce){ #view.vin > .shell{ animation:none; } .loc-cell img, .wcard, .wcard-img img{ transition:none; } .sk-photo{ transition:none; } }
+
+  /* WORK: dark ink theme with flat colour accents */
+  body.in-work #view{ background:#0e1014; color:#f2f2f0; }
+  body.in-work.nav-light #tb{ background:rgba(14,16,20,.92); border-bottom:1px solid #22262e; }
+  body.in-work.nav-light #tbName{ color:#fff; }
+  body.in-work.nav-light #tbNav a{ color:#9aa0ab; }
+  body.in-work.nav-light #tbNav a:hover, body.in-work.nav-light #tbNav a.on{ color:#fff; }
+  body.in-work #backBtn{ color:#9aa0ab; }
+  body.in-work .vlbl{ color:#7f9bff; } body.in-work .vlbl .ix{ color:#6b7280; }
+  body.in-work .work-exp .exp-base{ color:#fff; }
+  body.in-work .vintro{ color:#b9bec8; }
+  .wgrid{ gap:clamp(16px,2vw,24px); }
+  body.in-work .wcard{ background:#16181e; border:1px solid #262a33; border-radius:16px; box-shadow:none; transition:transform .25s ease, border-color .25s ease; }
+  body.in-work .wcard:hover{ transform:translateY(-3px); border-color:var(--wc); box-shadow:none; }
+  body.in-work .wcard:focus-visible{ outline:2px solid var(--wc); outline-offset:3px; }
+  body.in-work .wcard-img{ background:#1d2027; border-bottom:1px solid #262a33; }
+  body.in-work .wcard-ph{ background:#1d2027; }
+  body.in-work .wcard-body{ padding:clamp(18px,1.8vw,24px); gap:10px; }
+  body.in-work .wc-top{ align-items:center; }
+  body.in-work .wc-title{ display:flex; align-items:center; text-transform:none; font:700 clamp(1.15rem,1.8vw,1.45rem)/1.2 var(--disp); letter-spacing:-.02em; color:#fff; }
+  .wc-shp{ color:var(--wc); width:.8em; height:.8em; margin-right:.5em; }
+  body.in-work .wc-year{ font:600 11.5px/1 var(--disp); letter-spacing:0; border:0; border-radius:999px; padding:7px 11px; background:color-mix(in srgb, var(--wc) 24%, #16181e); color:#fff; }
+  .wc-role{ font:500 14px/1.4 var(--disp); color:#9aa0ab; margin-top:-2px; }
+  body.in-work .wc-desc{ color:#cfd3da; font-size:15.5px; line-height:1.55; }
+  body.in-work .wcard .pebble{ font:500 12px/1 var(--disp); letter-spacing:0; text-transform:none; background:#1f232b; border:0; color:#d7dae0; padding:7px 10px; }
+  body.in-work .pp-contact{ background:#16181e; border-color:#262a33; border-top-color:#4f7cff; }
+  body.in-work .pp-contact .pp-howh{ color:#fff; } body.in-work .pp-contact .pp-loopsub{ color:#b9bec8; }
+  body.in-work .pp-cbtn{ background:#1f232b; color:#fff; border-color:#333946; }
+  body.in-work .pp-cbtn:hover{ border-color:#fff; }
+  body.in-work .pp-cmain{ background:#fff; color:#111; border-color:#fff; } body.in-work .pp-cmain:hover{ background:#4f7cff; border-color:#4f7cff; color:#fff; }
+  body.in-work .pp-cmail{ color:#9aa0ab; }
+  /* work detail panel */
+  body.in-work #wdrawer:not(.pcase) .wd-panel{ background:#12141a; color:#eceef2; border-left:1px solid #262a33; }
+  body.in-work #wdrawer:not(.pcase) .wd-x{ border-color:#3a3f4b; color:#fff; }
+  body.in-work #wdrawer:not(.pcase) .wd-x:hover{ background:#fff; color:#111; }
+  body.in-work #wdrawer:not(.pcase) .vlbl{ color:#7f9bff; }
+  body.in-work #wdrawer:not(.pcase) .wd-title{ text-transform:none; font:700 clamp(2rem,4.6vw,3rem)/1.05 var(--disp); letter-spacing:-.03em; color:#fff; }
+  body.in-work #wdrawer:not(.pcase) .wd-role{ color:#b9bec8; }
+  body.in-work #wdrawer:not(.pcase) .wd-mk{ font:500 12px/1 var(--disp); letter-spacing:0; text-transform:none; color:#8b92a0; }
+  body.in-work #wdrawer:not(.pcase) .wd-chip{ font:500 13px/1 var(--disp); letter-spacing:0; border:0; background:#1f232b; color:#e3e6eb; }
+  body.in-work #wdrawer:not(.pcase) .wd-img, body.in-work .wd-extra img{ border-color:#262a33; background:#1d2027; border-radius:12px; overflow:hidden; }
+  body.in-work #wdrawer:not(.pcase) .wd-csk{ color:#7f9bff; margin-bottom:.5em; }
+  body.in-work #wdrawer:not(.pcase) .wd-long p{ color:#e3e6eb; }
+  body.in-work #wdrawer:not(.pcase) .wd-cap{ color:#8b92a0; }
 </style>
 </head>
 <body>
@@ -779,7 +823,7 @@ const SITE = {
     wdrawer.classList.remove("pcase"); $("wdX").textContent = "✕"; $("wdX").setAttribute("aria-label", "Close");
     wdBody.innerHTML = "";
     const lbl2 = el("div", "vlbl"); lbl2.appendChild(el("span", "", prod ? "( product )" : "( work )")); wdBody.appendChild(lbl2);
-    const wt = el("h2", "wd-title", w.title.toUpperCase()); wt.id = "wdTitle"; wdBody.appendChild(wt);
+    const wt = el("h2", "wd-title", w.title); wt.id = "wdTitle"; wdBody.appendChild(wt);
     wdBody.appendChild(el("p", "wd-role", w.role));
     const m = el("div", "wd-meta");
     const row = (k, chips) => { const r = el("div", "wd-mrow"); r.appendChild(el("span", "wd-mk", k)); chips.forEach(c => r.appendChild(el("span", "wd-chip", c))); m.appendChild(r); };
@@ -787,7 +831,7 @@ const SITE = {
     wdBody.appendChild(m);
     if (w.img) { const wi = el("div", "wd-img"); const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; wi.appendChild(im); wdBody.appendChild(wi); }
     (w.extra || []).forEach(g => { const f = el("figure", "wd-extra"); const im = doc.createElement("img"); im.src = g[0]; im.alt = g[1]; im.loading = "lazy"; f.appendChild(im); f.appendChild(el("figcaption", "wd-cap", g[1])); wdBody.appendChild(f); });
-    const lg = el("div", "wd-long"); ["The problem", "What I built", "The outcome"].forEach((k, i) => { const sec = el("div", "wd-cs"); if (prod) sec.appendChild(el("span", "wd-csk", pad2(i + 1) + " / " + k)); sec.appendChild(el("p", "", w.cs[i])); lg.appendChild(sec); }); wdBody.appendChild(lg);
+    const lg = el("div", "wd-long"); (prod ? ["The problem", "What I built", "The outcome"] : ["The problem", "What I did", "The result"]).forEach((k, i) => { const sec = el("div", "wd-cs"); sec.appendChild(el("span", "wd-csk", pad2(i + 1) + " / " + k)); sec.appendChild(el("p", "", w.cs[i])); lg.appendChild(sec); }); wdBody.appendChild(lg);
     wdrawer.hidden = false; requestAnimationFrame(() => wdrawer.classList.add("on")); body.style.overflow = "hidden";
     wdrawer.querySelector(".wd-panel").scrollTop = 0;
     $("wdX").focus();
@@ -961,14 +1005,16 @@ const SITE = {
   function buildWork(box, prod) {
     const id = prod ? "product" : "work", word = prod ? "Products" : "Experiences";
     box.appendChild(head(id, false));
-    const et = el("h2", "exp-title work-exp f-archivo-wide"); const eti = el("span", "exp-in"); eti.appendChild(el("span", "exp-base", word)); const glare = el("span", "exp-glare", word); glare.setAttribute("aria-hidden", "true"); eti.appendChild(glare); et.appendChild(eti); box.appendChild(et); fitSoon(eti);
+    const et = el("h2", "exp-title work-exp f-archivo-wide"); const eti = el("span", "exp-in"); eti.appendChild(el("span", "exp-base", word)); et.appendChild(eti); box.appendChild(et); fitSoon(eti);
     box.appendChild(el("p", "vintro", prod ? SITE.productIntro : SITE.workIntro));
     const grid = el("div", "wgrid");
     (prod ? SITE.product : SITE.work).forEach(w => {
-      const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0");
+      const wi = (prod ? SITE.product : SITE.work).indexOf(w);
+      const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.style.setProperty("--wc", PC[wi % PC.length]);
       const imgw = el("div", "wcard-img"); if (w.img) { const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; im.loading = "lazy"; imgw.appendChild(im); } else { const ph = el("div", "wcard-ph"); const kx = w.title.length % PSH.length; ph.style.color = PC[kx % PC.length]; ph.innerHTML = PSH[kx]; imgw.appendChild(ph); } c.appendChild(imgw);
       const b = el("div", "wcard-body");
-      const top = el("div", "wc-top"); top.appendChild(el("h3", "wc-title", w.title.toUpperCase())); top.appendChild(el("span", "wc-year", w.status || w.year)); b.appendChild(top);
+      const top = el("div", "wc-top"); const ttl = el("h3", "wc-title"); ttl.appendChild(shp(wi, "pp-shp wc-shp")); ttl.appendChild(doc.createTextNode(w.title)); top.appendChild(ttl); top.appendChild(el("span", "wc-year", w.status || w.year)); b.appendChild(top);
+      if (w.role) b.appendChild(el("p", "wc-role", w.role + (w.date ? " · " + w.date : "")));
       b.appendChild(el("p", "wc-desc", w.desc));
       if (prod && w.stats) { const st = el("div", "wc-stat"); st.appendChild(el("span", "wc-num", w.stats[0][0])); st.appendChild(el("span", "wc-lbl", w.stats[0][1])); b.appendChild(st); }
       const peb = el("div", "pebbles"); w.tags.forEach(t => peb.appendChild(el("span", "pebble", t))); b.appendChild(peb);
@@ -1091,14 +1137,14 @@ const SITE = {
     if (current === id) return;
     if (current === "") homeScroll = (typeof window.scrollY === "number" ? window.scrollY : 0);
     removePnav(); current = id; viewBody.innerHTML = ""; builders[id](viewBody);
-    body.classList.add("viewing"); body.classList.add("nav-light"); body.classList.toggle("in-photo", id === "photo"); body.classList.toggle("in-product", id === "product"); hud.classList.remove("show");
+    body.classList.add("viewing"); body.classList.add("nav-light"); body.classList.toggle("in-photo", id === "photo"); body.classList.toggle("in-product", id === "product"); body.classList.toggle("in-work", id === "work"); hud.classList.remove("show");
     home.hidden = true; view.hidden = false;
     view.classList.remove("vin"); void view.offsetWidth; view.classList.add("vin");
     window.scrollTo(0, 0); if (id === "photo") updatePnav(); themeFooter(id); setNav(); ensureRaf();
   }
   function closeView() {
     if (current === "") { setNav(); return; }
-    current = ""; removePnav(); themeFooter(""); body.classList.remove("viewing"); body.classList.remove("in-photo"); body.classList.remove("in-product");
+    current = ""; removePnav(); themeFooter(""); body.classList.remove("viewing"); body.classList.remove("in-photo"); body.classList.remove("in-product"); body.classList.remove("in-work");
     view.hidden = true; home.hidden = false; viewBody.innerHTML = "";
     window.scrollTo(0, homeScroll); measureHud(); setNav(); ensureRaf();
   }
@@ -1164,6 +1210,7 @@ const SITE = {
   (function () { const tb = $("tb"); if (!tb) return; const d = el("div", "tb-bounce"); d.setAttribute("aria-hidden", "true"); d.innerHTML = BOUNCE(4, false); tb.insertBefore(d, tb.firstChild); const fit = () => { const a = $("tbName").getBoundingClientRect(), b = $("tbNav").getBoundingClientRect(), t = tb.getBoundingClientRect(); const l = a.right - t.left + 16, r = t.right - b.left + 16; d.style.left = l + "px"; d.style.right = r + "px"; d.style.visibility = (t.width - l - r) > 40 ? "visible" : "hidden"; }; window.addEventListener("resize", fit); if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(fit); setTimeout(fit, 300); fit(); })();
   function themeFooter(id) {
     const mf = $("mfoot"), at = $("mfAtmos"); if (!mf) return;
+    if (id === "work") { mf.style.setProperty("--fbg", "#0e1014"); mf.style.setProperty("--fink", "#f2f2f0"); mf.style.setProperty("--facc", "#4f7cff"); mf.style.setProperty("--fbd", "#262a33"); if (at) { if (at.classList.contains("pp-fbounce")) at.innerHTML = '<div class="loc-atmos"></div>'; at.className = ""; at.style.cssText = ""; } return; }
     if (id === "product") { mf.style.setProperty("--fbg", "#fff"); mf.style.setProperty("--fink", "#111"); mf.style.setProperty("--facc", "#ff6b4a"); mf.style.setProperty("--fbd", "#111"); if (at) { at.className = "pp-fbounce"; at.style.cssText = ""; at.innerHTML = BOUNCE(6, true); } return; }
     if (at && at.classList.contains("pp-fbounce")) at.innerHTML = '<div class="loc-atmos"></div>';
     const L = (id === "photo" && SITE.locations && SITE.locations.length) ? SITE.locations[SITE.locations.length - 1] : null;
