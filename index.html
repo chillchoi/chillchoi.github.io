@@ -1212,7 +1212,7 @@ const SITE = {
       const cols = el("div", "loc-cols" + (L.airy ? " airy" : ""));
       const photos = [];
       const NP = (window.PHOTO_COUNTS && window.PHOTO_COUNTS[L.key]) ? window.PHOTO_COUNTS[L.key] : (L.n || 0) + PHOTO_BUFFER;
-      for (let i = 0; i < NP; i++) photos.push({ src: "photos/" + L.key + "/" + pad2(i + 1) + ".jpg", label: L.name + " " + pad2(i + 1) });
+      for (let i = 0; i < NP; i++) photos.push({ src: "photos/" + L.key + "/" + L.key + "_" + (i + 1) + ".jpg", label: L.name + " " + pad2(i + 1) });
       const blocks = (L.blocks || []).slice();
       function pushBlock(bd) { const blk = el("div", "loc-item"); const bx = el("div", "loc-block"); bx.style.background = bd.bg; bx.style.color = bd.ink; const span = el("span", ""); span.appendChild(el("span", "bl-k", bd.k)); span.appendChild(doc.createTextNode(bd.t)); bx.appendChild(span); blk.appendChild(bx); cols.appendChild(blk); }
       for (let i = 0; i < photos.length; i++) {
