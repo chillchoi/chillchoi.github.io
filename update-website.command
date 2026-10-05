@@ -23,11 +23,11 @@ for p in $PLACES; do
   d="$CH/photos/$p"
   [ -d "$d" ] || continue
 
-  # highest existing NN.jpg
+  # highest existing place_N.jpg
   max=0
-  for f in "$d"/[0-9][0-9].jpg; do
+  for f in "$d"/"${p}"_*.jpg; do
     [ -e "$f" ] || continue
-    n=$(basename "$f" .jpg); n=$((10#$n))
+    n=$(basename "$f" .jpg); n=${n#"${p}_"}; case "$n" in *[!0-9]*|"") continue ;; esac
     [ "$n" -gt "$max" ] && max=$n
   done
 
@@ -35,14 +35,14 @@ for p in $PLACES; do
   for f in "$d"/*; do
     [ -f "$f" ] || continue
     b=$(basename "$f")
-    echo "$b" | grep -Eq '^[0-9][0-9]\.jpg$' && continue
+    echo "$b" | grep -Eq "^${p}_[0-9]+\.jpg$" && continue
     ext=$(echo "${b##*.}" | tr 'A-Z' 'a-z')
     case "$ext" in
       jpg|jpeg|png|heic|heif|tif|tiff) ;;
       *) continue ;;
     esac
     max=$((max + 1))
-    out=$(printf "%s/%02d.jpg" "$d" "$max")
+    out="$d/${p}_$max.jpg"
     if sips -Z 1400 -s format jpeg "$f" --out "$out" >/dev/null 2>&1; then
       rm -f "$f"
       echo "  $p: added $(basename "$out")  (from $b)"
@@ -54,7 +54,7 @@ for p in $PLACES; do
 
   # remove exact-duplicate photos (same image dropped twice); keep the lower number
   tmp=$(mktemp)
-  for f in "$d"/[0-9][0-9].jpg; do
+  for f in "$d"/"${p}"_*.jpg; do
     [ -e "$f" ] || continue
     echo "$(shasum "$f" | awk '{print $1}')|$f"
   done | sort > "$tmp"
@@ -70,9 +70,9 @@ done
   i=0
   for p in $PLACES; do
     d="$CH/photos/$p"; mx=0
-    for f in "$d"/[0-9][0-9].jpg; do
+    for f in "$d"/"${p}"_*.jpg; do
       [ -e "$f" ] || continue
-      n=$(basename "$f" .jpg); n=$((10#$n))
+      n=$(basename "$f" .jpg); n=${n#"${p}_"}; case "$n" in *[!0-9]*|"") continue ;; esac
       [ "$n" -gt "$mx" ] && mx=$n
     done
     [ "$i" -ne 0 ] && printf ','
