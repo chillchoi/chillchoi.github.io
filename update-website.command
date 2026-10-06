@@ -9,7 +9,9 @@
 #  ADD photos:  drag ANY photos into a place folder — any name,
 #               any format (iPhone .HEIC, big camera .JPG, .png).
 #               This script auto-resizes, renames, and de-dupes them.
-#  DELETE photos: just drag them to the Trash.
+#  DELETE photos: just drag them to the Trash. The same photo is
+#               also removed from the wallpapers folder, and the
+#               rest are renumbered so there are no gaps.
 #  Then: double-click this file. Done.
 # ============================================================
 
@@ -22,6 +24,20 @@ echo "== Preparing photos =="
 for p in $PLACES; do
   d="$CH/photos/$p"
   [ -d "$d" ] || continue
+
+  # photos deleted from this place: delete the exact same photo from the wallpapers folder too
+  WP=$(ls -d "$CH"/photos/wallpapers* 2>/dev/null | head -1)
+  git ls-files -d -- "photos/$p" | while read -r gone; do
+    h=$(git show HEAD:"$gone" | shasum | awk '{print $1}')
+    [ -n "$WP" ] && for w in "$WP"/*; do
+      [ -f "$w" ] && [ "$(shasum "$w" | awk '{print $1}')" = "$h" ] && rm -f "$w" && echo "  wallpapers: removed $(basename "$w") (same as deleted $(basename "$gone"))"
+    done
+  done
+
+  # close gaps left by deleted photos (1,2,4 -> 1,2,3); two passes so names never collide
+  k=0
+  for n in $(ls "$d" | sed -n "s/^${p}_\([0-9]*\)\.jpg$/\1/p" | sort -n); do k=$((k + 1)); mv "$d/${p}_$n.jpg" "$d/tmp_$k.jpg"; done
+  for f in "$d"/tmp_*.jpg; do [ -e "$f" ] && mv "$f" "$d/${p}_${f##*tmp_}"; done
 
   # highest existing place_N.jpg
   max=0
