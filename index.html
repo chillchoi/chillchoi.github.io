@@ -409,7 +409,10 @@
   .pp-bmtb[aria-selected="true"]{ background:#111; color:#fff; }
   .pp-bmol.pm small{ display:block; font:600 10.5px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:#777; margin-bottom:6px; }
   .pp-bmol.pm b{ display:block; font-size:15.5px; line-height:1.35; margin-bottom:2px; }
-  .pp-bm{ position:relative; z-index:1; padding:0 0 clamp(40px,7vh,72px); }
+  .pp-bm{ position:relative; z-index:1; margin:clamp(40px,7vh,72px) 0; padding:clamp(22px,3vw,40px); border-radius:28px; background:linear-gradient(135deg,#fff4ef 0%,#f1f4ff 50%,#ecf8f1 100%); border:1px solid rgba(17,17,17,.10); }
+  .pp-bm .pp-howh{ margin-top:0; }
+  .pp-bmi{ will-change:transform; }
+  .pp-bms{ will-change:transform; backface-visibility:hidden; }
   .pp-bmr{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   @media (max-width:640px){ .pp-bmr{ grid-template-columns:1fr; } }
   .pp-bmc{ border:1px solid rgba(17,17,17,.16); border-radius:18px; padding:12px 14px; background:color-mix(in srgb, var(--pc) 8%, #fff); box-shadow:4px 4px 0 var(--pc); }
@@ -1259,11 +1262,11 @@ const SITE = {
         : [["⭐", "<small>North-star metric</small><b>" + F[0] + "</b>"], ["🧪", "<small>Hypothesis</small><b>" + P[0] + "</b>"], ["📦", "<small>First version</small><b>" + F[1] + "</b>"], ["⚠️", "<small>Risk to watch</small><b>" + P[1] + "</b>Also watch " + F[2].toLowerCase() + "."]];
       const ol = el("ol", "pp-bmol" + (tab ? " pm" : "")); items.forEach((x, i) => { const li = el("li"); li.style.setProperty("--pc", PC[i % PC.length]); li.style.setProperty("--i", i); li.appendChild(el("span", "pp-bme", x[0])); const t = el("span"); t.innerHTML = x[1]; li.appendChild(t); ol.appendChild(li); }); out.appendChild(ol); };
     const IH = () => strips[0].firstChild.offsetHeight || 56;
-    const place = (i, k, anim) => { strips[i].style.transition = anim ? "transform " + (1.6 + i * .5) + "s cubic-bezier(.15,.75,.25,1)" : "none"; strips[i].style.transform = "translateY(" + (-k * IH()) + "px)"; };
+    const place = (i, k, anim) => { strips[i].style.transition = anim ? "transform " + (3 + i * .7) + "s cubic-bezier(.22,.61,.36,1)" : "none"; strips[i].style.transform = "translateY(" + (-k * IH()) + "px)"; };
     let busy = false;
     btn.addEventListener("click", () => { if (busy) return; busy = true; btn.disabled = true; out.classList.add("wait");
-      R.forEach((r, i) => { const n = r[1].length; place(i, cur[i], false); void strips[i].offsetHeight; cur[i] = Math.floor(Math.random() * n); place(i, REDUCE_MOTION ? cur[i] : cur[i] + n * 3, !REDUCE_MOTION); });
-      setTimeout(() => { R.forEach((r, i) => place(i, cur[i], false)); say(); out.classList.remove("wait"); busy = false; btn.disabled = false; }, REDUCE_MOTION ? 0 : 2700); });
+      R.forEach((r, i) => { const n = r[1].length; place(i, cur[i], false); void strips[i].offsetHeight; cur[i] = Math.floor(Math.random() * n); place(i, REDUCE_MOTION ? cur[i] : cur[i] + n * 2, !REDUCE_MOTION); });
+      setTimeout(() => { R.forEach((r, i) => place(i, cur[i], false)); say(); out.classList.remove("wait"); busy = false; btn.disabled = false; }, REDUCE_MOTION ? 0 : 4500); });
     wrap.appendChild(reels); wrap.appendChild(btn); wrap.appendChild(out);
     cur[0] = 3; cur[1] = 5; cur[2] = 0; setTimeout(() => { R.forEach((r, i) => place(i, cur[i], false)); say(); }, 0);
     return wrap;
