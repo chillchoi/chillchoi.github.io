@@ -1375,18 +1375,19 @@ const SITE = {
   (function () {
     const ps = new Map(), still = matchMedia("(prefers-reduced-motion:reduce)").matches;
     const init = (box) => { const W = box.clientWidth, H = box.clientHeight, list = [], n = box.children.length; [...box.querySelectorAll(".pp-bn")].forEach((e, i) => { const r = e.offsetWidth / 2, a = Math.random() * 6.28, v = 0.25 + Math.random() * 0.3; list.push({ e, r, x: ((i + 0.5) / n) * W, y: r + Math.random() * Math.max(0, H - 2 * r), vx: Math.cos(a) * v, vy: Math.sin(a) * v }); }); return list; };
-    const step = () => {
+    let last = 0;
+    const step = (t) => {
+      const k = last ? Math.min((t - last) / 16.7, 3) : 1; last = t;
       [$("tb") && $("tb").querySelector(".tb-bounce"), $("mfAtmos")].forEach(box => {
         if (!box || !box.offsetWidth || !box.querySelector(".pp-bn")) return;
         let L = ps.get(box); if (!L || !L.length || !L[0].e.isConnected) { L = init(box); ps.set(box, L); }
         const W = box.clientWidth, H = box.clientHeight;
-        if (!still) for (const p of L) { p.x += p.vx; p.y += p.vy; if (p.x < p.r) { p.x = p.r; p.vx = Math.abs(p.vx); } if (p.x > W - p.r) { p.x = W - p.r; p.vx = -Math.abs(p.vx); } const top = Math.min(p.r, H / 2), bot = Math.max(H - p.r, H / 2); if (p.y < top) { p.y = top; p.vy = Math.abs(p.vy); } if (p.y > bot) { p.y = bot; p.vy = -Math.abs(p.vy); } }
+        if (!still) for (const p of L) { p.x += p.vx * k; p.y += p.vy * k; if (p.x < p.r) { p.x = p.r; p.vx = Math.abs(p.vx); } if (p.x > W - p.r) { p.x = W - p.r; p.vx = -Math.abs(p.vx); } const top = Math.min(p.r, H / 2), bot = Math.max(H - p.r, H / 2); if (p.y < top) { p.y = top; p.vy = Math.abs(p.vy); } if (p.y > bot) { p.y = bot; p.vy = -Math.abs(p.vy); } }
         for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, m = a.r + b.r; if (d < m) { const nx = dx / d, ny = dy / d, o = (m - d) / 2; a.x -= nx * o; a.y -= ny * o; b.x += nx * o; b.y += ny * o; const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny; if (rv < 0) { a.vx += rv * nx; a.vy += rv * ny; b.vx -= rv * nx; b.vy -= rv * ny; } } }
         for (const p of L) p.e.style.transform = "translate(" + (p.x - p.r).toFixed(1) + "px," + (p.y - p.r).toFixed(1) + "px)";
       });
       requestAnimationFrame(step);
     };
-    window.addEventListener("resize", () => ps.clear());
     requestAnimationFrame(step);
   })();
   function themeFooter(id) {
