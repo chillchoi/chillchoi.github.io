@@ -676,7 +676,6 @@
   body.in-work .wt-track{ position:relative; height:8px; }
   body.in-work .wt-bar{ position:absolute; top:0; bottom:0; min-width:6px; border-radius:999px; background:var(--wc); transform-origin:left center; transition:opacity .3s ease; }
   body.in-work .wt-row.lit{ color:#fff; }
-  body.in-work .wt-rows:has(.wt-row.lit) .wt-row:not(.lit) .wt-bar{ opacity:.28; }
   body.in-work .wt-row:focus-visible{ outline:2px solid var(--wc); outline-offset:2px; }
   body.in-work .wt-ax{ position:relative; height:14px; margin:6px 0 0 calc(var(--lc) + var(--g)); font:500 11px/14px var(--disp); color:#8b92a0; }
   body.in-work .wt-ax span{ position:absolute; top:0; transform:translateX(-50%); }
@@ -684,6 +683,64 @@
   @media (max-width:600px){ body.in-work .wt{ --lc:46%; --g:10px; } body.in-work .wt-row{ font-size:12px; } body.in-work .wt-lbl{ align-items:flex-start; } body.in-work .wt-shp{ margin-top:2px; } body.in-work .wt-name{ white-space:normal; } }
   @media (prefers-reduced-motion:no-preference){ body.in-work .wt-bar{ animation:wtGrow .8s cubic-bezier(.2,.7,.2,1) calc(200ms + var(--k,0) * 50ms) both; } @keyframes wtGrow{ from{ transform:scaleX(0); } } }
   @media (prefers-reduced-motion:reduce){ body.in-work .wt-row, body.in-work .wt-bar{ transition:none; } }
+  body.in-work .wt{ background:radial-gradient(120% 140% at 0% 0%, rgba(255,107,74,.10), transparent 45%), radial-gradient(120% 140% at 100% 100%, rgba(79,124,255,.12), transparent 50%), #16181e; }
+  body.in-work .wt-h strong{ font:700 clamp(18px,2vw,22px)/1.1 var(--disp); color:#fff; }
+  body.in-work .wt-stats{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 12px; }
+  body.in-work .wt-stat{ font:500 12.5px/1 var(--disp); color:#c8ccd4; padding:8px 12px; border-radius:999px; background:color-mix(in srgb, var(--wc) 14%, transparent); border:1px solid color-mix(in srgb, var(--wc) 40%, transparent); }
+  body.in-work .wt-stat b{ color:var(--wc); font-weight:800; font-size:15px; }
+  body.in-work .wt-filt{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  body.in-work .wt-chip{ display:inline-flex; align-items:center; gap:2px; font:600 12px/1 var(--disp); color:#dfe2e8; padding:7px 11px; border-radius:999px; border:1px solid #2c313b; background:#1a1d24; transition:background .25s, border-color .25s, color .25s, transform .2s; }
+  body.in-work .wt-chip i{ font-style:normal; opacity:.6; margin-left:2px; }
+  body.in-work .wt-chip:hover{ border-color:var(--wc); transform:translateY(-1px); }
+  body.in-work .wt-chip[aria-pressed="true"]{ background:var(--wc); border-color:var(--wc); color:#0e1014; }
+  body.in-work .wt-chip[aria-pressed="true"] .wt-shp{ color:#0e1014; }
+  body.in-work .wt-row{ min-height:34px; cursor:pointer; transition:color .25s ease, opacity .3s ease, background .25s ease; }
+  body.in-work .wt-row:hover, body.in-work .wt-row.lit{ background:color-mix(in srgb, var(--wc) 10%, transparent); }
+  body.in-work .wt-row.dim{ opacity:.22; }
+  body.in-work .wt-name{ display:flex; flex-direction:column; gap:2px; }
+  body.in-work .wt-t{ overflow:hidden; text-overflow:ellipsis; }
+  body.in-work .wt-role{ font:500 11px/1.1 var(--disp); color:color-mix(in srgb, var(--wc) 70%, #8b92a0); overflow:hidden; text-overflow:ellipsis; }
+  body.in-work .wt-track{ height:12px; }
+  body.in-work .wt-bar{ background:linear-gradient(90deg, var(--wc), color-mix(in srgb, var(--wc) 55%, #fff)); box-shadow:0 0 0 rgba(0,0,0,0); transition:opacity .3s ease, box-shadow .3s ease, filter .3s ease; }
+  body.in-work .wt-row.lit .wt-bar, body.in-work .wt-row.on-t .wt-bar{ box-shadow:0 0 14px color-mix(in srgb, var(--wc) 70%, transparent); filter:saturate(1.25); }
+  body.in-work .wt-bar.live{ background:repeating-linear-gradient(115deg, var(--wc) 0 8px, color-mix(in srgb, var(--wc) 65%, #fff) 8px 16px); background-size:200% 100%; }
+  body.in-work .wt-bar.live::after{ content:""; position:absolute; right:-3px; top:50%; width:10px; height:10px; margin-top:-5px; border-radius:50%; background:var(--wc); box-shadow:0 0 0 0 var(--wc); animation:wtPulse 1.8s ease-out infinite; }
+  @keyframes wtPulse{ 70%{ box-shadow:0 0 0 10px transparent; } 100%{ box-shadow:0 0 0 0 transparent; } }
+  @keyframes wtStripe{ to{ background-position:-34px 0; } }
+  @media (prefers-reduced-motion:no-preference){ body.in-work .wt-bar.live{ animation:wtGrow .8s cubic-bezier(.2,.7,.2,1) calc(200ms + var(--k,0) * 50ms) both, wtStripe 1.6s linear infinite; } }
+  body.in-work .wt-tip{ position:absolute; bottom:calc(100% + 4px); transform:translateY(4px); font:600 11px/1 var(--disp); color:#0e1014; background:var(--wc); padding:5px 8px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:3; }
+  body.in-work .wt-row.lit .wt-tip{ opacity:1; transform:none; }
+  body.in-work .wt-rows.scrubbing .wt-row.lit:not(.on-t) .wt-tip{ opacity:0; }
+  body.in-work .wt-rows.scrubbing .wt-row:not(.on-t) .wt-bar{ opacity:.18; }
+  body.in-work .wt-rows.scrubbing .wt-row.on-t .wt-bar{ opacity:1; }
+  body.in-work .wt-rows.scrubbing .wt-row.lit:not(.on-t){ background:none; }
+  body.in-work .wt-rows.scrubbing .wt-row.on-t{ color:#fff; }
+  body.in-work .wt-rows:has(.wt-row.lit):not(.scrubbing) .wt-row:not(.lit) .wt-bar{ opacity:.28; }
+  body.in-work .wt-now{ position:absolute; top:-6px; bottom:-6px; width:0; border-left:2px dashed #f9c22e; }
+  body.in-work .wt-now em{ position:absolute; top:-14px; left:-12px; font:700 10px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:#f9c22e; font-style:normal; }
+  body.in-work .wt-scrub{ position:absolute; top:-8px; bottom:-8px; width:2px; margin-left:-1px; background:#fff; opacity:0; transition:opacity .15s; z-index:2; }
+  body.in-work .wt-rows.scrubbing .wt-scrub{ opacity:.9; }
+  body.in-work .wt-slbl{ position:absolute; bottom:-30px; left:6px; font:700 11px/1 var(--disp); color:#0e1014; background:#fff; padding:5px 8px; border-radius:6px; white-space:nowrap; }
+  body.in-work .wt-slbl.flip{ left:auto; right:6px; }
+  body.in-work .wt-rows{ touch-action:pan-y; user-select:none; padding-top:8px; }
+  body.in-work .wt{ position:relative; overflow:hidden; }
+  body.in-work .wt > :not(.wt-blobs){ position:relative; z-index:1; }
+  body.in-work .wt-blobs{ position:absolute; inset:0; pointer-events:none; }
+  body.in-work .wt-blobs span{ position:absolute; left:var(--x); top:var(--y); width:260px; height:260px; margin:-130px; border-radius:50%; background:var(--c); opacity:.10; filter:blur(60px); animation:wtDrift var(--d) ease-in-out infinite alternate; }
+  @keyframes wtDrift{ to{ transform:translate(80px,-40px) scale(1.3); } }
+  body.in-work .wt-wl{ margin-top:22px; font:600 11px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:#8b92a0; }
+  body.in-work .wt-wave{ height:70px; margin-top:8px; }
+  body.in-work .wt-wave svg{ width:100%; height:100%; display:block; overflow:visible; }
+  body.in-work .wt-wave path{ opacity:.85; transition:opacity .3s, filter .3s; stroke:#16181e; stroke-width:.06; transform-origin:bottom; }
+  body.in-work .wt-wave svg.one path:not(.hi), body.in-work .wt-rows.scrubbing ~ .wt-wave path:not(.hi){ opacity:.2; }
+  body.in-work .wt-wave path.dim{ opacity:.12; }
+  body.in-work .wt-wave path.hi{ opacity:1; filter:drop-shadow(0 0 4px rgba(255,255,255,.4)); }
+  @media (prefers-reduced-motion:no-preference){ body.in-work .wt-wave path{ animation:wtRise .9s cubic-bezier(.2,.7,.2,1) calc(300ms + var(--k,0) * 60ms) both; } @keyframes wtRise{ from{ transform:scaleY(0); } } }
+  @media (prefers-reduced-motion:reduce){ body.in-work .wt-blobs span{ animation:none; } }
+  body.in-work .wcard{ transition:opacity .3s ease, border-color .3s ease; }
+  body.in-work .wcard.dim{ opacity:.25; }
+  @media (max-width:600px){ body.in-work .wt-role{ display:none; } }
+  @media (prefers-reduced-motion:reduce){ body.in-work .wt-bar.live, body.in-work .wt-bar.live::after{ animation:none; } }
   /* work panel: carries the card's colour and shape, short staggered build */
   body.in-work #wdrawer:not(.pcase) .wd-panel{ border-left-color:var(--wc,#262a33); }
   body.in-work #wdrawer:not(.pcase) .vlbl, body.in-work #wdrawer:not(.pcase) .wd-csk{ color:var(--wc,#7f9bff); }
@@ -925,7 +982,7 @@ const SITE = {
   function openWork(w, prod, dir) {
     overlayOpen();
     wdrawer.classList.remove("pcase"); $("wdX").textContent = "✕"; $("wdX").setAttribute("aria-label", "Close");
-    const idx = Math.max(0, (prod ? SITE.product : SITE.work).indexOf(w)); wdrawer.style.setProperty("--wc", PC[idx % PC.length]);
+    const idx = Math.max(0, (prod ? SITE.product : SITE.work).indexOf(w)); wdrawer.style.setProperty("--wc", WC[idx % WC.length]);
     wdrawer.classList.toggle("flip", !!dir); if (!prod) syncStep(idx, !!dir);
     wdBody.innerHTML = "";
     const lbl2 = el("div", "vlbl"); lbl2.appendChild(el("span", "", prod ? "( product )" : "( work )")); wdBody.appendChild(lbl2);
@@ -1024,6 +1081,7 @@ const SITE = {
   function refitTitles() { const els = doc.querySelectorAll("#view .exp-in"); Array.prototype.forEach.call(els, function (s) { fitWide(s); }); }
 
   const PC = ["#ff6b4a", "#4f7cff", "#1fae6a", "#9b5cff"];
+  const WC = ["#ff6b4a", "#4f7cff", "#1fae6a", "#9b5cff", "#f9c22e", "#ff4fa3", "#22c3d6", "#ff9a3c", "#7ad151", "#c77dff"];
   const PSH = [
     '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>',
     '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor" transform="rotate(-12 12 12)"/></svg>',
@@ -1044,7 +1102,7 @@ const SITE = {
   const wdStep = el("nav", "wd-step"), wdPrev = el("button", "wd-sb"), wdNext = el("button", "wd-sb wd-nx"), wdRail = el("div", "wd-rail"), wdLive = el("span", "wd-live");
   let wdIdx = 0;
   wdStep.setAttribute("aria-label", "Browse experiences"); wdLive.setAttribute("aria-live", "polite"); wdPrev.type = wdNext.type = "button";
-  SITE.work.forEach((w, i) => { const d = el("button", "wd-rd"); d.type = "button"; d.style.setProperty("--wc", PC[i % PC.length]); d.setAttribute("aria-label", w.title + ", " + (i + 1) + " of " + SITE.work.length); d.appendChild(shp(i, "pp-shp")); d.addEventListener("click", () => stepTo(i, i > wdIdx ? 1 : -1)); wdRail.appendChild(d); });
+  SITE.work.forEach((w, i) => { const d = el("button", "wd-rd"); d.type = "button"; d.style.setProperty("--wc", WC[i % WC.length]); d.setAttribute("aria-label", w.title + ", " + (i + 1) + " of " + SITE.work.length); d.appendChild(shp(i, "pp-shp")); d.addEventListener("click", () => stepTo(i, i > wdIdx ? 1 : -1)); wdRail.appendChild(d); });
   wdPrev.addEventListener("click", () => stepTo(wdIdx - 1, -1)); wdNext.addEventListener("click", () => stepTo(wdIdx + 1, 1));
   wdStep.append(wdPrev, wdRail, wdNext, wdLive); wdrawer.querySelector(".wd-panel").appendChild(wdStep);
   function stepTo(i, dir) { const n = SITE.work.length; i = (i + n) % n; if (i !== wdIdx) openWork(SITE.work[i], false, dir); }
@@ -1060,29 +1118,59 @@ const SITE = {
   const monthName = t => MO.substr((t % 12) * 3, 3) + " " + Math.floor(t / 12);
   function spans(w) { const d = new Date(), now = d.getFullYear() * 12 + d.getMonth(); return [...String(w.date || "").matchAll(/(\w{3}) (\d{4}) to (?:(\w{3}) (\d{4})|Present)/g)].map(r => [monthOf(r[1], r[2]), r[3] ? monthOf(r[3], r[4]) : now]); }
   function workRibbon(list, cards) {
-    const rows = list.map((w, i) => ({ w, i, s: spans(w) })).filter(r => r.s.length).sort((a, b) => a.s[0][0] - b.s[0][0]);
+    const rows = list.map((w, i) => ({ w, i, s: spans(w), cat: String(w.category || "Other").split(" · ")[0] })).filter(r => r.s.length).sort((a, b) => a.s[0][0] - b.s[0][0]);
     if (!rows.length) return null;
     const t0 = rows[0].s[0][0], t1 = Math.max(...rows.map(r => Math.max(...r.s.map(s => s[1])))) + 1, pct = v => ((v - t0) / (t1 - t0) * 100).toFixed(2) + "%";
+    const d0 = new Date(), now = d0.getFullYear() * 12 + d0.getMonth();
     const live = rows.filter(r => /Present/.test(r.w.date)).length;
+    const at = t => rows.filter(r => r.s.some(s => t >= s[0] && t <= s[1]));
+    let peak = 0; for (let t = t0; t < t1; t++) peak = Math.max(peak, at(t).length);
+    const cats = [...new Set(rows.map(r => r.cat))];
+    const dur = s => { const m = s.reduce((a, x) => a + x[1] - x[0] + 1, 0), y = Math.floor(m / 12), r = m % 12; return (y ? y + " yr" + (y > 1 ? "s" : "") : "") + (y && r ? " " : "") + (r ? r + " mo" : ""); };
     const box = el("div", "wt");
-    const h = el("p", "wt-h", "Timeline"); h.appendChild(el("span", "", rows.length + " roles · " + monthName(t0) + " to " + (live ? "now · " + live + " ongoing" : monthName(t1 - 1)))); box.appendChild(h);
+    const h = el("div", "wt-h"); h.appendChild(el("strong", "", "The journey")); h.appendChild(el("span", "", "Drag across the map to see what I was juggling at any moment")); box.appendChild(h);
+    const st = el("div", "wt-stats");
+    [[rows.length, "roles"], [cats.length, "different fields"], [peak, "at once, at my busiest"], [live, "going right now"]].forEach((x, k) => { const c = el("span", "wt-stat"); c.style.setProperty("--wc", WC[(k * 3 + 1) % WC.length]); c.appendChild(el("b", "", String(x[0]))); c.appendChild(doc.createTextNode(" " + x[1])); st.appendChild(c); });
+    box.appendChild(st);
+    const fl = el("div", "wt-filt"); fl.setAttribute("role", "group"); fl.setAttribute("aria-label", "Filter roles by field");
+    let pick = null;
+    const applyPick = () => { box.classList.toggle("picking", !!pick); rows.forEach(r => { const on = !pick || r.cat === pick; r.b.classList.toggle("dim", !on); if (r.wv) r.wv.classList.toggle("dim", !on); const c = cards[r.i]; if (c) c.classList.toggle("dim", !on); }); [...fl.children].forEach(c => c.setAttribute("aria-pressed", String(c.dataset.c === pick))); };
+    cats.forEach(c => { const first = rows.find(r => r.cat === c), n = rows.filter(r => r.cat === c).length; const b = el("button", "wt-chip"); b.type = "button"; b.dataset.c = c; b.style.setProperty("--wc", WC[first.i % WC.length]); b.appendChild(shp(first.i, "pp-shp wt-shp")); b.appendChild(doc.createTextNode(c + " ")); b.appendChild(el("i", "", String(n))); b.setAttribute("aria-pressed", "false"); b.addEventListener("click", () => { pick = pick === c ? null : c; applyPick(); }); fl.appendChild(b); });
+    box.appendChild(fl);
     const rs = el("div", "wt-rows"); rs.setAttribute("role", "group"); rs.setAttribute("aria-label", "Career timeline, use the up and down arrow keys to move between roles");
     const ticks = el("div", "wt-ticks"), ax = el("div", "wt-ax"); ticks.setAttribute("aria-hidden", "true"); ax.setAttribute("aria-hidden", "true"); rs.appendChild(ticks);
     for (let y = Math.ceil(t0 / 12); y * 12 < t1; y++) { const tk = el("span", "wt-tick"); tk.style.left = pct(y * 12); ticks.appendChild(tk); const yl = el("span", "", String(y)); yl.style.left = pct(y * 12); ax.appendChild(yl); }
+    if (now >= t0 && now < t1) { const nl = el("span", "wt-now"); nl.style.left = pct(now + .5); nl.appendChild(el("em", "", "now")); ticks.appendChild(nl); }
+    const scrub = el("span", "wt-scrub"), sl = el("span", "wt-slbl"); scrub.appendChild(sl); ticks.appendChild(scrub);
     rows.forEach((r, k) => {
-      const b = el("button", "wt-row"); b.type = "button"; b.tabIndex = k ? -1 : 0; b.style.setProperty("--wc", PC[r.i % PC.length]); b.setAttribute("aria-label", r.w.title + ", " + r.w.date);
-      const lb = el("span", "wt-lbl"); lb.appendChild(shp(r.i, "pp-shp wt-shp")); lb.appendChild(el("span", "wt-name", r.w.title)); b.appendChild(lb);
-      const tr = el("span", "wt-track"); r.s.forEach(s => { const bar = el("span", "wt-bar"); bar.style.left = "min(" + pct(s[0]) + ", calc(100% - 6px))"; bar.style.width = pct(t0 + s[1] + 1 - s[0]); bar.style.setProperty("--k", k); tr.appendChild(bar); }); b.appendChild(tr);
+      const b = el("button", "wt-row"); r.b = b; b.type = "button"; b.tabIndex = k ? -1 : 0; b.style.setProperty("--wc", WC[r.i % WC.length]); b.setAttribute("aria-label", r.w.title + ", " + r.w.role + ", " + r.w.date);
+      const lb = el("span", "wt-lbl"); lb.appendChild(shp(r.i, "pp-shp wt-shp")); const nm = el("span", "wt-name"); nm.appendChild(el("span", "wt-t", r.w.title)); nm.appendChild(el("span", "wt-role", String(r.w.role || "").split(" · ")[0])); lb.appendChild(nm); b.appendChild(lb);
+      const tr = el("span", "wt-track"); r.s.forEach(s => { const bar = el("span", "wt-bar" + (s[1] >= now ? " live" : "")); bar.style.left = "min(" + pct(s[0]) + ", calc(100% - 6px))"; bar.style.width = pct(t0 + s[1] + 1 - s[0]); bar.style.setProperty("--k", k); tr.appendChild(bar); });
+      const tip = el("span", "wt-tip", dur(r.s) + " · " + r.cat); tip.style.left = pct(r.s[0][0]); tr.appendChild(tip); b.appendChild(tr);
       const c = cards[r.i], lit = on => { b.classList.toggle("lit", on); if (c) c.classList.toggle("lit", on); };
       b.addEventListener("pointerenter", () => lit(true)); b.addEventListener("pointerleave", () => lit(false));
       b.addEventListener("focus", () => lit(true)); b.addEventListener("blur", () => lit(false));
       if (c) { c.addEventListener("pointerenter", () => lit(true)); c.addEventListener("pointerleave", () => lit(false)); }
-      b.addEventListener("click", () => { b.focus(); openWork(r.w, false); });
+      b.addEventListener("click", () => { if (rs.dataset.drag === "1") return; b.focus(); openWork(r.w, false); });
       rs.appendChild(b);
     });
+    let down = false, sx = 0;
+    const scrubAt = e => { const tb = ticks.getBoundingClientRect(); if (e.clientX < tb.left || e.clientX > tb.right) { endScrub(); return; } const f = (e.clientX - tb.left) / tb.width, t = Math.floor(t0 + f * (t1 - t0)), hit = at(t); scrub.style.left = (f * 100).toFixed(2) + "%"; rs.classList.add("scrubbing"); sl.textContent = monthName(t) + " · " + (hit.length ? hit.length + (hit.length > 1 ? " things at once" : " thing") : "a breather"); rows.forEach(r => r.b.classList.toggle("on-t", hit.indexOf(r) >= 0)); sl.classList.toggle("flip", f > .6); };
+    const endScrub = () => { rs.classList.remove("scrubbing"); rows.forEach(r => r.b.classList.remove("on-t")); };
+    rs.addEventListener("pointermove", e => { if (e.pointerType === "mouse" || down) scrubAt(e); if (down && Math.abs(e.clientX - sx) > 6) rs.dataset.drag = "1"; });
+    rs.addEventListener("pointerdown", e => { down = true; sx = e.clientX; rs.dataset.drag = ""; if (e.pointerType !== "mouse") scrubAt(e); });
+    window.addEventListener("pointerup", () => { down = false; setTimeout(() => { rs.dataset.drag = ""; }, 0); });
+    rs.addEventListener("pointerleave", () => { if (!down) endScrub(); });
     rs.addEventListener("focusin", e => rs.querySelectorAll(".wt-row").forEach(x => { x.tabIndex = x === e.target ? 0 : -1; }));
     rs.addEventListener("keydown", e => { const bs = [...rs.querySelectorAll(".wt-row")], i = bs.indexOf(doc.activeElement), j = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: bs.length - 1 }[e.key]; if (i < 0 || !(j >= 0 && j < bs.length)) return; e.preventDefault(); bs[j].focus(); });
-    box.appendChild(rs); box.appendChild(ax);
+    const wave = el("div", "wt-wave"); wave.setAttribute("aria-hidden", "true"); wave.style.marginLeft = "calc(var(--lc) + var(--g))";
+    const NS = "http://www.w3.org/2000/svg", sv = doc.createElementNS(NS, "svg"); sv.setAttribute("viewBox", "0 0 " + (t1 - t0) + " " + peak); sv.setAttribute("preserveAspectRatio", "none");
+    const base = new Array(t1 - t0 + 1).fill(0);
+    rows.forEach(r => { const top = base.slice(); r.s.forEach(s => { for (let t = s[0]; t <= s[1]; t++) top[t - t0] += 1; }); let d = ""; for (let x = 0; x <= t1 - t0; x++) d += (x ? "L" : "M") + x + " " + (peak - top[x]); for (let x = t1 - t0; x >= 0; x--) d += "L" + x + " " + (peak - base[x]); const pa = doc.createElementNS(NS, "path"); pa.setAttribute("d", d + "Z"); pa.setAttribute("fill", WC[r.i % WC.length]); pa.style.setProperty("--k", rows.indexOf(r)); sv.appendChild(pa); r.wv = pa; for (let x = 0; x <= t1 - t0; x++) base[x] = top[x]; });
+    wave.appendChild(sv); const wl = el("p", "wt-wl", "How many things I was doing at once"); wl.style.marginLeft = "calc(var(--lc) + var(--g))";
+    rows.forEach(r => { const c = cards[r.i]; r.b.addEventListener("pointerenter", () => sv.classList.add("one")); r.b.addEventListener("pointerleave", () => sv.classList.remove("one")); new MutationObserver(() => r.wv.classList.toggle("hi", r.b.classList.contains("lit") || r.b.classList.contains("on-t"))).observe(r.b, { attributes: true, attributeFilter: ["class"] }); });
+    const blobs = el("div", "wt-blobs"); blobs.setAttribute("aria-hidden", "true"); for (let k = 0; k < 5; k++) { const bl = el("span"); bl.style.cssText = "--c:" + WC[(k * 2 + 1) % WC.length] + ";--x:" + (8 + k * 21) + "%;--y:" + (k % 2 ? 70 : 15) + "%;--d:" + (14 + k * 3) + "s"; blobs.appendChild(bl); } box.prepend(blobs);
+    box.appendChild(rs); box.appendChild(ax); box.appendChild(wl); box.appendChild(wave);
     return box;
   }
   const STAGES = [
@@ -1167,7 +1255,7 @@ const SITE = {
     const anim = !REDUCE_MOTION && "IntersectionObserver" in window; if (anim) grid.classList.add("anim");
     (prod ? SITE.product : SITE.work).forEach(w => {
       const wi = (prod ? SITE.product : SITE.work).indexOf(w);
-      const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.style.setProperty("--wc", PC[wi % PC.length]); c.dataset.i = wi;
+      const c = el("article", "wcard"); c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.style.setProperty("--wc", WC[wi % WC.length]); c.dataset.i = wi;
       c.style.setProperty("--d", (wi % 2) * 90 + "ms");
       const imgw = el("div", "wcard-img"); if (w.img) { const im = doc.createElement("img"); im.src = w.img; im.alt = w.title; im.loading = "lazy"; imgw.appendChild(im); } else { const ph = el("div", "wcard-ph"); const kx = w.title.length % PSH.length; ph.style.color = PC[kx % PC.length]; ph.innerHTML = PSH[kx]; imgw.appendChild(ph); } c.appendChild(imgw);
       const b = el("div", "wcard-body");
