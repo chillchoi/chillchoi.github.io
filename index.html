@@ -401,6 +401,9 @@
   .pp-covl{ width:12px; border-top:2px dashed #ddd; }
   @media (prefers-reduced-motion:reduce){ .pp-cf, .pp-eyes, .pp-wig, .pp-lback{ animation:none !important; } }
 
+  .pp-case:has(+ .pp-bm){ border-bottom:0; }
+  .pp-bmh mark{ background:linear-gradient(transparent 55%, color-mix(in srgb, var(--pc) 35%, transparent) 55%); color:inherit; padding:0 2px; }
+  .pp-bmol b{ font-weight:700; color:#111; }
   .pp-bm{ position:relative; z-index:1; padding:0 0 clamp(40px,7vh,72px); }
   .pp-bmr{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   @media (max-width:640px){ .pp-bmr{ grid-template-columns:1fr; } }
@@ -1240,7 +1243,7 @@ const SITE = {
     const strips = R.map((r, i) => { const c = el("div", "pp-bmc"); c.style.setProperty("--pc", PC[i % PC.length]); c.appendChild(el("span", "pp-bml", r[0])); const win = el("div", "pp-bmw"), st = el("div", "pp-bms"); for (let k = 0; k < 4; k++) r[1].forEach(o => { const it = el("div", "pp-bmi"); it.appendChild(el("span", "pp-bme", o[0])); it.appendChild(el("span", "", o[1])); st.appendChild(it); }); win.appendChild(st); c.appendChild(win); reels.appendChild(c); return st; });
     const btn = el("button", "pp-bmb"); btn.type = "button"; btn.innerHTML = '<span aria-hidden="true">🎰</span> Spin';
     const out = el("div", "pp-bmo"); out.setAttribute("aria-live", "polite");
-    const say = () => { const w = R[0][1][cur[0]], p = R[1][1][cur[1]], f = R[2][1][cur[2]]; out.innerHTML = ""; const h = el("p", "pp-bmh"); h.textContent = w[0] + " " + w[1].replace(/^./, c => c.toUpperCase()) + " stuck on " + p[1] + ", shipped as " + f[1] + "."; out.appendChild(h); const ol = el("ol", "pp-bmol"); [["🔍", "Watch " + w[1] + " try to get it done, and note where " + p[1] + " slows them down."], ["🎯", "Write one sentence for the problem and pick 2 to 4 goals I can measure."], ["🛠️", "Build a rough " + f[1].replace(/^an? /, "") + " fast, put it in front of real people, and see where they get stuck."], ["📈", "Ship it, watch the numbers and the people, then fix what broke the same day."]].forEach((x, i) => { const li = el("li"); li.style.setProperty("--pc", PC[i % PC.length]); li.style.setProperty("--i", i); li.appendChild(el("span", "pp-bme", x[0])); li.appendChild(el("span", "", x[1])); ol.appendChild(li); }); out.appendChild(ol); };
+    const say = () => { const w = R[0][1][cur[0]], p = R[1][1][cur[1]], f = R[2][1][cur[2]], m = (t, i) => '<mark style="--pc:' + PC[i] + '">' + t + '</mark>'; out.innerHTML = ""; const h = el("p", "pp-bmh"); h.innerHTML = w[0] + " " + m(w[1].replace(/^./, c => c.toUpperCase()), 0) + " stuck on " + m(p[1], 1) + ", shipped as " + m(f[1], 2) + "."; out.appendChild(h); const ol = el("ol", "pp-bmol"); [["🔍", "<b>Watch</b> " + w[1] + " try to get it done, and note where <b>" + p[1] + "</b> slows them down."], ["🎯", "Write <b>one sentence</b> for the problem and pick <b>2 to 4 goals</b> I can measure."], ["🛠️", "<b>Build a rough " + f[1].replace(/^an? /, "") + "</b> fast, put it in front of <b>real people</b>, and see where they get stuck."], ["📈", "<b>Ship it</b>, watch the numbers and the people, then <b>fix what broke the same day</b>."]].forEach((x, i) => { const li = el("li"); li.style.setProperty("--pc", PC[i % PC.length]); li.style.setProperty("--i", i); li.appendChild(el("span", "pp-bme", x[0])); const t = el("span"); t.innerHTML = x[1]; li.appendChild(t); ol.appendChild(li); }); out.appendChild(ol); };
     const IH = () => strips[0].firstChild.offsetHeight || 56;
     const place = (i, k, anim) => { strips[i].style.transition = anim ? "transform " + (1.6 + i * .5) + "s cubic-bezier(.15,.75,.25,1)" : "none"; strips[i].style.transform = "translateY(" + (-k * IH()) + "px)"; };
     let busy = false;
