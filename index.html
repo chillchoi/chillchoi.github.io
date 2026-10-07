@@ -785,6 +785,7 @@
   .cf-bit svg{ width:100%; height:100%; display:block; }
   @keyframes cfFly{ to{ transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(.4); opacity:0; } }
   @media (prefers-reduced-motion:reduce){ body.in-work .sk-dice{ animation:none; } }
+  body.in-work .wcard .pebble.sk-pill{ font:700 12.5px/1 var(--disp); color:#fff; padding:7px 11px; border-radius:999px; background:color-mix(in srgb, var(--wc) 75%, #16181e); border:2px solid var(--wc); }
   /* work panel: carries the card's colour and shape, short staggered build */
   body.in-work #wdrawer:not(.pcase) .wd-panel{ border-left-color:var(--wc,#262a33); }
   body.in-work #wdrawer:not(.pcase) .vlbl, body.in-work #wdrawer:not(.pcase) .wd-csk{ color:var(--wc,#7f9bff); }
@@ -1386,7 +1387,7 @@ const SITE = {
       if (w.role) b.appendChild(el("p", "wc-role", w.role + (w.date ? " · " + w.date : "")));
       b.appendChild(el("p", "wc-desc", w.desc));
       if (prod && w.stats) { const st = el("div", "wc-stat"); st.appendChild(el("span", "wc-num", w.stats[0][0])); st.appendChild(el("span", "wc-lbl", w.stats[0][1])); b.appendChild(st); }
-      const peb = el("div", "pebbles"); w.tags.forEach(t => peb.appendChild(el("span", "pebble", t))); b.appendChild(peb);
+      const peb = el("div", "pebbles"); w.tags.forEach(t => { if (prod) { peb.appendChild(el("span", "pebble", t)); return; } const fi = SITE.work.findIndex(x => (x.tags || []).indexOf(t) >= 0), pb = el("span", "pebble sk-pill", (SKE[t] || "✨") + " " + t); pb.style.setProperty("--wc", WC[fi % WC.length]); peb.appendChild(pb); }); b.appendChild(peb);
       c.appendChild(b);
       c.addEventListener("click", () => openWork(w, prod));
       c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openWork(w, prod); } });
