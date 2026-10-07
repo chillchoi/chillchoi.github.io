@@ -122,7 +122,9 @@
   .photo-hd .vlbl{ color:var(--lacc); } .photo-hd .vlbl .ix{ color:var(--ldim); }
   .photo-hd .photo-title{ color:var(--link); border-bottom:0; box-shadow:none; }
   body.in-photo.nav-light #tb{ background:color-mix(in srgb, var(--plbg) 94%, transparent); border-bottom:1px solid var(--pldim); }
-  body.in-photo #tb a, body.in-photo #tb button, body.in-photo #tbName{ color:var(--plink); }
+  body.in-photo #tb a, body.in-photo #tb button, body.in-photo #tbName{ color:var(--plink); transition:color .45s ease; }
+  body.in-photo #tb{ transition:background .45s ease, border-color .45s ease; }
+  body.in-photo #tbNav a:hover, body.in-photo #tbNav a.on{ color:var(--placc,var(--plink)); }
   .mfoot-3{ display:none; }
   .mfoot-3 .mfl{ display:block; }
   .mfoot-3 .exp-in{ font-size:clamp(3rem,19vw,7rem); }
@@ -1320,7 +1322,7 @@ const SITE = {
   });
 
   const skillsEl = $("skills"), hfoot = $("hfoot");
-  function navTheme() { if (current !== "") { body.classList.add("nav-light"); return; } let light = false; [skillsEl, hfoot].forEach(elm => { const r = elm.getBoundingClientRect(); if (r.top <= 46 && r.bottom > 46) light = true; }); body.classList.toggle("nav-light", light); }
+  function navTheme() { if (current === "photo") { const secs = document.querySelectorAll("#view .loc"); for (const sc of secs) { const r = sc.getBoundingClientRect(); if (r.top <= 46 && r.bottom > 46) { const cs = sc.style; ["lbg:plbg", "link:plink", "ldim:pldim", "lacc:placc"].forEach(m => { const [f, t] = m.split(":"), v = cs.getPropertyValue("--" + f); if (v) body.style.setProperty("--" + t, v); }); break; } } } if (current !== "") { body.classList.add("nav-light"); return; } let light = false; [skillsEl, hfoot].forEach(elm => { const r = elm.getBoundingClientRect(); if (r.top <= 46 && r.bottom > 46) light = true; }); body.classList.toggle("nav-light", light); }
 
   function skillsParallax() {
     if (current !== "" || reduced) return;
