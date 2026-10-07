@@ -39,6 +39,15 @@ for p in $PLACES; do
   for n in $(ls "$d" | sed -n "s/^${p}_\([0-9]*\)\.jpg$/\1/p" | sort -n); do k=$((k + 1)); mv "$d/${p}_$n.jpg" "$d/tmp_$k.jpg"; done
   for f in "$d"/tmp_*.jpg; do [ -e "$f" ] && mv "$f" "$d/${p}_${f##*tmp_}"; done
 
+  # keep wallpaper numbers matching the site: rename each wallpaper to its site twin's name (two passes)
+  [ -n "$WP" ] && for f in "$d"/"${p}"_*.jpg; do
+    [ -e "$f" ] || continue; h=$(shasum "$f" | awk '{print $1}')
+    for w in "$WP"/*.jpg; do
+      [ -f "$w" ] && [ "$(basename "$w")" != "$(basename "$f")" ] && [ "$(shasum "$w" | awk '{print $1}')" = "$h" ] && mv "$w" "$WP/tmp__$(basename "$f")" && break
+    done
+  done
+  [ -n "$WP" ] && for t in "$WP"/tmp__*; do [ -e "$t" ] && mv "$t" "$WP/${t##*tmp__}"; done
+
   # highest existing place_N.jpg
   max=0
   for f in "$d"/"${p}"_*.jpg; do
