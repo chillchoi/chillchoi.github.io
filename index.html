@@ -401,6 +401,24 @@
   .pp-covl{ width:12px; border-top:2px dashed #ddd; }
   @media (prefers-reduced-motion:reduce){ .pp-cf, .pp-eyes, .pp-wig, .pp-lback{ animation:none !important; } }
 
+  .pp-bm{ position:relative; z-index:1; padding:0 0 clamp(40px,7vh,72px); }
+  .pp-bmr{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:640px){ .pp-bmr{ grid-template-columns:1fr; } }
+  .pp-bmc{ border:1px solid rgba(17,17,17,.16); border-radius:18px; padding:12px 14px; background:color-mix(in srgb, var(--pc) 8%, #fff); box-shadow:4px 4px 0 var(--pc); }
+  .pp-bml{ display:block; font:600 11px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:#777; margin-bottom:8px; }
+  .pp-bmw{ height:56px; overflow:hidden; border-radius:12px; background:#fff; border:1px solid rgba(17,17,17,.1); -webkit-mask-image:linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image:linear-gradient(transparent, #000 18%, #000 82%, transparent); }
+  .pp-bmi{ height:56px; display:flex; align-items:center; gap:10px; padding:0 14px; font:700 16px/1.1 var(--disp); color:#111; }
+  .pp-bme{ font-size:1.3em; line-height:1; }
+  .pp-bmb{ display:inline-flex; align-items:center; gap:8px; margin-top:16px; font:700 15px/1 var(--disp); color:#fff; background:#111; padding:13px 22px; border-radius:999px; box-shadow:3px 3px 0 #ff6b4a; transition:transform .2s, box-shadow .2s; }
+  .pp-bmb:hover{ transform:translate(-2px,-2px); box-shadow:5px 5px 0 #ff6b4a; }
+  .pp-bmb:active{ transform:translate(2px,2px); box-shadow:0 0 0 #ff6b4a; }
+  .pp-bmb:disabled{ opacity:.6; cursor:wait; }
+  .pp-bmo{ margin-top:18px; border:1px solid rgba(17,17,17,.16); border-radius:18px; padding:18px; background:#fff; transition:opacity .3s; }
+  .pp-bmo.wait{ opacity:.35; }
+  .pp-bmh{ font:700 clamp(17px,2vw,21px)/1.3 var(--disp); margin-bottom:12px; }
+  .pp-bmol{ list-style:none; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
+  .pp-bmol li{ display:flex; gap:10px; align-items:flex-start; font:400 14.5px/1.45 var(--disp); color:#333; padding:12px; border-radius:14px; background:color-mix(in srgb, var(--pc) 10%, #fff); border-left:4px solid var(--pc); }
+  @media (prefers-reduced-motion:no-preference){ .pp-bmo:not(.wait) .pp-bmol li{ animation:wdUp2 .5s cubic-bezier(.2,.7,.2,1) calc(var(--i) * 90ms) both; } @keyframes wdUp2{ from{ opacity:0; transform:translateY(10px); } } }
   .pp-quote{ position:relative; overflow:hidden; margin:clamp(28px,5vh,44px) 0 0; padding:clamp(26px,4vw,46px); border-radius:22px; background:#111; color:#fff; }
   .pp-qk{ position:relative; z-index:1; margin:0; padding-right:clamp(70px,16vw,190px); font:700 clamp(2rem,5vw,3.6rem)/1.1 var(--disp); letter-spacing:-.02em; }
   .pp-qe{ position:relative; z-index:1; margin-top:12px; font:500 clamp(1.05rem,1.8vw,1.35rem)/1.4 var(--disp); color:#f9c22e; }
@@ -752,7 +770,7 @@
   @keyframes skHue{ to{ background-position:300% 0; } }
   @keyframes skRoll{ from{ transform:rotate(-540deg) scale(.4); } }
   body.in-work .sk-field{ position:relative; height:clamp(200px,28vh,280px); overflow:hidden; border-radius:12px; background:rgba(255,255,255,.02); border:1px dashed #2c313b; touch-action:none; }
-  body.in-work .sk-b{ position:absolute; left:0; top:0; font-family:var(--disp); font-weight:700; line-height:1; white-space:nowrap; color:#fff; padding:.55em .9em; border-radius:999px; background:color-mix(in srgb, var(--wc) 75%, #16181e); border:2px solid var(--wc); box-shadow:0 4px 14px color-mix(in srgb, var(--wc) 35%, transparent); cursor:grab; user-select:none; touch-action:none; transition:opacity .3s, box-shadow .3s, background .3s; will-change:transform; }
+  body.in-work .sk-b{ position:absolute; left:0; top:0; font-family:var(--disp); font-weight:700; line-height:1; white-space:nowrap; color:#fff; padding:.55em .9em; border-radius:999px; background:color-mix(in srgb, var(--wc) 75%, #16181e); border:2px solid var(--wc); box-shadow:0 4px 14px color-mix(in srgb, var(--wc) 35%, transparent); cursor:grab; user-select:none; touch-action:none; transition:opacity .3s, box-shadow .3s, background .3s; will-change:transform; transition:opacity .4s, box-shadow .4s, background .4s; }
   body.in-work .sk-b:active{ cursor:grabbing; }
   body.in-work .sk-field.picking .sk-b:not(.on){ opacity:.3; }
   body.in-work .sk-b.on{ background:var(--wc); color:#0e1014; box-shadow:0 0 22px var(--wc); }
@@ -1208,6 +1226,32 @@ const SITE = {
     ["Measure", "Checking what happened.", [["Booth Host Kiosk", "uptime tracked, quiz completion missed"], ["VivaTech Conversation Analysis", "baseline set for the A/B test"]]],
     ["Iterate", "Fixing what broke and changing what confused people.", [["Booth Host Kiosk", "same-day fixes while live"], ["Glow Buddy", "99 builds from agency, founder, and visitor feedback"]]]
   ];
+  function countUp(box) {
+    if (REDUCE_MOTION || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; io.unobserve(e.target); const n = e.target, txt = n.textContent, m = txt.match(/\d+(\.\d+)?/); if (!m) return; const end = parseFloat(m[0]), dec = (m[1] || "").length - 1, t0 = performance.now(), D = 1400; const f = t => { const p = Math.min(1, (t - t0) / D), v = end * (1 - Math.pow(1 - p, 3)); n.textContent = txt.replace(m[0], dec > 0 ? v.toFixed(dec) : Math.round(v)); if (p < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }), { threshold: .6 });
+    setTimeout(() => box.querySelectorAll(".pp-sn").forEach(n => io.observe(n)), 0);
+  }
+  function briefMachine() {
+    const R = [["Who", [["👵", "a caregiver"], ["🧑‍🔬", "a lab scientist"], ["🛍️", "a shopper"], ["🎪", "an event visitor"], ["🧑‍💼", "a busy founder"], ["🧒", "a first-time user"]]],
+               ["Stuck on", [["🌀", "too many options"], ["🔇", "nobody to ask"], ["🐢", "a slow, clunky flow"], ["🧩", "scattered data"], ["😵", "a confusing screen"], ["⏳", "waiting in line"]]],
+               ["Ship as", [["🖥️", "a kiosk"], ["📱", "an app"], ["🤖", "an AI avatar"], ["📊", "a dashboard"], ["🗂️", "a deck"], ["💬", "a chat flow"]]]];
+    const wrap = el("section", "pp-bm"); wrap.appendChild(el("h3", "pp-howh", "Spin a brief"));
+    wrap.appendChild(el("p", "pp-loopsub", "Give me a random problem. Spin the reels and I will tell you the first four things I would do."));
+    const reels = el("div", "pp-bmr"), cur = [0, 0, 0];
+    const strips = R.map((r, i) => { const c = el("div", "pp-bmc"); c.style.setProperty("--pc", PC[i % PC.length]); c.appendChild(el("span", "pp-bml", r[0])); const win = el("div", "pp-bmw"), st = el("div", "pp-bms"); for (let k = 0; k < 4; k++) r[1].forEach(o => { const it = el("div", "pp-bmi"); it.appendChild(el("span", "pp-bme", o[0])); it.appendChild(el("span", "", o[1])); st.appendChild(it); }); win.appendChild(st); c.appendChild(win); reels.appendChild(c); return st; });
+    const btn = el("button", "pp-bmb"); btn.type = "button"; btn.innerHTML = '<span aria-hidden="true">🎰</span> Spin';
+    const out = el("div", "pp-bmo"); out.setAttribute("aria-live", "polite");
+    const say = () => { const w = R[0][1][cur[0]], p = R[1][1][cur[1]], f = R[2][1][cur[2]]; out.innerHTML = ""; const h = el("p", "pp-bmh"); h.textContent = w[0] + " " + w[1].replace(/^./, c => c.toUpperCase()) + " stuck on " + p[1] + ", shipped as " + f[1] + "."; out.appendChild(h); const ol = el("ol", "pp-bmol"); [["🔍", "Watch " + w[1] + " try to get it done, and note where " + p[1] + " slows them down."], ["🎯", "Write one sentence for the problem and pick 2 to 4 goals I can measure."], ["🛠️", "Build a rough " + f[1].replace(/^an? /, "") + " fast, put it in front of real people, and see where they get stuck."], ["📈", "Ship it, watch the numbers and the people, then fix what broke the same day."]].forEach((x, i) => { const li = el("li"); li.style.setProperty("--pc", PC[i % PC.length]); li.style.setProperty("--i", i); li.appendChild(el("span", "pp-bme", x[0])); li.appendChild(el("span", "", x[1])); ol.appendChild(li); }); out.appendChild(ol); };
+    const IH = () => strips[0].firstChild.offsetHeight || 56;
+    const place = (i, k, anim) => { strips[i].style.transition = anim ? "transform " + (1.6 + i * .5) + "s cubic-bezier(.15,.75,.25,1)" : "none"; strips[i].style.transform = "translateY(" + (-k * IH()) + "px)"; };
+    let busy = false;
+    btn.addEventListener("click", () => { if (busy) return; busy = true; btn.disabled = true; out.classList.add("wait");
+      R.forEach((r, i) => { const n = r[1].length; place(i, cur[i], false); void strips[i].offsetHeight; cur[i] = Math.floor(Math.random() * n); place(i, REDUCE_MOTION ? cur[i] : cur[i] + n * 3, !REDUCE_MOTION); });
+      setTimeout(() => { R.forEach((r, i) => place(i, cur[i], false)); say(); out.classList.remove("wait"); busy = false; btn.disabled = false; }, REDUCE_MOTION ? 0 : 2700); });
+    wrap.appendChild(reels); wrap.appendChild(btn); wrap.appendChild(out);
+    cur[0] = 3; cur[1] = 5; cur[2] = 0; setTimeout(() => { R.forEach((r, i) => place(i, cur[i], false)); say(); }, 0);
+    return wrap;
+  }
   function buildLoop() {
     const wrap = el("section", "pp-loop"); wrap.appendChild(el("h3", "pp-howh", "My product loop"));
     wrap.appendChild(el("p", "pp-loopsub", "Pick a stage to see which projects show it. The loop runs back to the start, because running the kiosk live showed me what I should measure on the next project."));
@@ -1262,7 +1306,9 @@ const SITE = {
     const done = SITE.product.filter(w => w.status !== "In progress"), wip = SITE.product.filter(w => w.status === "In progress");
     done.forEach((w, i) => renderCase(w, i));
     if (wip.length) { const nw = el("section", "pp-now"); nw.appendChild(el("h3", "pp-howh", "Now working on")); nw.appendChild(el("p", "pp-loopsub", "Two projects I am in the middle of right now, and the plan behind each one.")); box.appendChild(nw); wip.forEach((w, j) => renderCase(w, done.length + j)); }
+    box.appendChild(briefMachine());
     box.appendChild(buildLoop());
+    countUp(box);
     const qt = el("figure", "pp-quote"); qt.appendChild(shp(0, "pp-blob pp-q1")); qt.appendChild(shp(2, "pp-blob pp-q2"));
     qt.appendChild(el("blockquote", "pp-qk", "Give him one thing to do, and he comes back having done ten."));
     qt.appendChild(el("figcaption", "pp-qc", "Klleon's founder, translated from Korean."));
@@ -1282,6 +1328,7 @@ const SITE = {
       c.addEventListener("pointermove", e => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; c.style.transform = "perspective(900px) rotateX(" + ((.5 - y) * 7).toFixed(2) + "deg) rotateY(" + ((x - .5) * 9).toFixed(2) + "deg) translateY(-4px)"; c.style.setProperty("--gx", (x * 100).toFixed(1) + "%"); c.style.setProperty("--gy", (y * 100).toFixed(1) + "%"); });
       c.addEventListener("pointerleave", () => { c.style.transform = ""; }); });
   }
+  const SKE = { "Product": "🧩", "Kiosk": "🖥️", "GTM": "🚀", "Data": "📊", "Experiment design": "🧪", "User Research": "🔍", "Personas": "🧑‍🤝‍🧑", "Navigation": "🧭", "Figma": "🎨", "Leadership": "👑", "PM": "📋", "Healthcare": "🩺", "Training": "🏋️", "Segmentation": "🍰", "K-means": "🎯", "Python": "🐍", "Research": "📚", "Oncology": "🎗️", "Modeling": "📈", "Diligence": "🕵️", "Compliance": "✅", "Legal Research": "⚖️", "Market Research": "🌎", "Strategy": "♟️", "Interviews": "🎤", "Market Entry": "🚪", "MedTech": "🧠", "APAC": "🌏", "Pricing": "💰", "Operations": "⚙️", "Simulation": "🛰️" };
   function skillPlay(list, cards, grid) {
     const wrap = el("section", "sk-play");
     const hd = el("div", "sk-hd"); hd.appendChild(el("strong", "", "Skill playground")); const info = el("span", "sk-info", "Fling the bubbles around. Tap one to see where I used it."); info.setAttribute("aria-live", "polite"); hd.appendChild(info);
@@ -1291,13 +1338,13 @@ const SITE = {
     const tags = Object.keys(cnt).sort((a, b) => cnt[b].length - cnt[a].length);
     let pick = null; const B = [];
     const apply = () => { B.forEach(b => b.e.classList.toggle("on", b.t === pick)); field.classList.toggle("picking", !!pick); cards.forEach((c, i) => { if (c) c.classList.toggle("dim", !!pick && cnt[pick].indexOf(i) < 0); }); info.textContent = pick ? pick + " · used in " + cnt[pick].length + " role" + (cnt[pick].length > 1 ? "s" : "") + ": " + cnt[pick].map(i => list[i].title).join(", ") : "Fling the bubbles around. Tap one to see where I used it."; };
-    tags.forEach((t, k) => { const n = cnt[t].length, b = el("button", "sk-b"); b.type = "button"; b.textContent = t; const col = WC[cnt[t][0] % WC.length]; b.style.setProperty("--wc", col); b.style.fontSize = (11 + n * 2.2) + "px"; field.appendChild(b); B.push({ e: b, t, x: 0, y: 0, vx: (Math.random() - .5) * 2, vy: (Math.random() - .5) * 2, w: 0, h: 0, drag: false, moved: 0 }); });
+    tags.forEach((t, k) => { const n = cnt[t].length, b = el("button", "sk-b"); b.type = "button"; b.textContent = (SKE[t] || "✨") + " " + t; b.setAttribute("aria-label", t); const col = WC[cnt[t][0] % WC.length]; b.style.setProperty("--wc", col); b.style.fontSize = (11 + n * 2.2) + "px"; field.appendChild(b); B.push({ e: b, t, x: 0, y: 0, vx: (Math.random() - .5) * .5, vy: (Math.random() - .5) * .5, w: 0, h: 0, drag: false, moved: 0 }); });
     let W = 0, H = 0, ready = false;
     const layout = () => { W = field.clientWidth; H = field.clientHeight; B.forEach((b, k) => { b.w = b.e.offsetWidth; b.h = b.e.offsetHeight; if (!ready) { b.x = Math.random() * Math.max(1, W - b.w); b.y = Math.random() * Math.max(1, H - b.h); } }); ready = W > 0; };
     B.forEach(b => {
       let ox = 0, oy = 0, lx = 0, ly = 0, lt = 0;
       b.e.addEventListener("pointerdown", e => { b.drag = true; b.moved = 0; b.e.setPointerCapture(e.pointerId); const r = field.getBoundingClientRect(); ox = e.clientX - r.left - b.x; oy = e.clientY - r.top - b.y; lx = e.clientX; ly = e.clientY; lt = performance.now(); });
-      b.e.addEventListener("pointermove", e => { if (!b.drag) return; const r = field.getBoundingClientRect(), now = performance.now(), dt = Math.max(8, now - lt); b.vx = (e.clientX - lx) / dt * 16; b.vy = (e.clientY - ly) / dt * 16; b.moved += Math.abs(e.clientX - lx) + Math.abs(e.clientY - ly); lx = e.clientX; ly = e.clientY; lt = now; b.x = e.clientX - r.left - ox; b.y = e.clientY - r.top - oy; });
+      b.e.addEventListener("pointermove", e => { if (!b.drag) return; const r = field.getBoundingClientRect(), now = performance.now(), dt = Math.max(8, now - lt); b.vx = Math.max(-3, Math.min(3, (e.clientX - lx) / dt * 6)); b.vy = Math.max(-3, Math.min(3, (e.clientY - ly) / dt * 6)); b.moved += Math.abs(e.clientX - lx) + Math.abs(e.clientY - ly); lx = e.clientX; ly = e.clientY; lt = now; b.x = e.clientX - r.left - ox; b.y = e.clientY - r.top - oy; });
       b.e.addEventListener("pointerup", () => { b.drag = false; if (b.moved < 6) { pick = pick === b.t ? null : b.t; apply(); const r = b.e.getBoundingClientRect(); if (pick) confetti(r.left + r.width / 2, r.top + r.height / 2, 10); } });
       b.e.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick = pick === b.t ? null : b.t; apply(); } });
       b.e.addEventListener("click", e => e.preventDefault());
@@ -1308,8 +1355,8 @@ const SITE = {
       const k = last ? Math.min((t - last) / 16.7, 3) : 1; last = t;
       if (!ready || field.clientWidth !== W) layout();
       if (ready) {
-        for (const b of B) { if (b.drag) continue; b.vy += .02 * k; b.vx *= Math.pow(.995, k); b.vy *= Math.pow(.995, k); if (REDUCE_MOTION) { b.vx = b.vy = 0; } b.x += b.vx * k; b.y += b.vy * k; if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) * .85; } if (b.x > W - b.w) { b.x = W - b.w; b.vx = -Math.abs(b.vx) * .85; } if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy) * .85; } if (b.y > H - b.h) { b.y = H - b.h; b.vy = -Math.abs(b.vy) * .7; if (Math.abs(b.vy) < .3) b.vy = -(.6 + Math.random() * 1.2); } }
-        for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) { const a = B[i], c = B[j], dx = (c.x + c.w / 2) - (a.x + a.w / 2), dy = (c.y + c.h / 2) - (a.y + a.h / 2), ox2 = (a.w + c.w) / 2 - Math.abs(dx), oy2 = (a.h + c.h) / 2 - Math.abs(dy); if (ox2 > 0 && oy2 > 0) { if (ox2 < oy2) { const s2 = Math.sign(dx) || 1, m = ox2 / 2; if (!a.drag) a.x -= s2 * m; if (!c.drag) c.x += s2 * m; const v = a.vx; a.vx = c.vx * .9; c.vx = v * .9; } else { const s2 = Math.sign(dy) || 1, m = oy2 / 2; if (!a.drag) a.y -= s2 * m; if (!c.drag) c.y += s2 * m; const v = a.vy; a.vy = c.vy * .9; c.vy = v * .9; } } }
+        for (const b of B) { if (b.drag) continue; if (REDUCE_MOTION) { b.vx = b.vy = 0; } else { const sp = Math.hypot(b.vx, b.vy) || .01, want = .28, f = 1 + (want / sp - 1) * Math.min(1, .02 * k); b.vx *= f; b.vy *= f; } b.x += b.vx * k; b.y += b.vy * k; if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx); } if (b.x > W - b.w) { b.x = W - b.w; b.vx = -Math.abs(b.vx); } if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy); } if (b.y > H - b.h) { b.y = H - b.h; b.vy = -Math.abs(b.vy); } }
+        for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) { const a = B[i], c = B[j], dx = (c.x + c.w / 2) - (a.x + a.w / 2), dy = (c.y + c.h / 2) - (a.y + a.h / 2), ox2 = (a.w + c.w) / 2 - Math.abs(dx), oy2 = (a.h + c.h) / 2 - Math.abs(dy); if (ox2 > 0 && oy2 > 0) { const ax = ox2 < oy2, sg = Math.sign(ax ? dx : dy) || 1, m = Math.min(ax ? ox2 : oy2, 2) * .25 * k; if (ax) { if (!a.drag) a.x -= sg * m; if (!c.drag) c.x += sg * m; const rv = (c.vx - a.vx) * sg; if (rv < 0) { a.vx += rv * sg * .5; c.vx -= rv * sg * .5; } } else { if (!a.drag) a.y -= sg * m; if (!c.drag) c.y += sg * m; const rv = (c.vy - a.vy) * sg; if (rv < 0) { a.vy += rv * sg * .5; c.vy -= rv * sg * .5; } } } }
         for (const b of B) b.e.style.transform = "translate(" + b.x.toFixed(1) + "px," + b.y.toFixed(1) + "px)";
       }
       requestAnimationFrame(tick);
@@ -1317,7 +1364,7 @@ const SITE = {
     requestAnimationFrame(tick);
     dice.addEventListener("click", () => {
       dice.classList.remove("roll"); void dice.offsetWidth; dice.classList.add("roll");
-      B.forEach(b => { b.vx += (Math.random() - .5) * 14; b.vy -= 4 + Math.random() * 6; });
+      B.forEach(b => { b.vx += (Math.random() - .5) * 1.6; b.vy += (Math.random() - .5) * 1.6; });
       const i = Math.floor(Math.random() * list.length), c = cards[i];
       const r = dice.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2, 18);
       if (!c) return; setTimeout(() => { c.scrollIntoView({ behavior: REDUCE_MOTION ? "auto" : "smooth", block: "center" }); c.classList.remove("wc-pick"); void c.offsetWidth; c.classList.add("wc-pick"); setTimeout(() => openWork(list[i], false), REDUCE_MOTION ? 0 : 1100); }, 500);
