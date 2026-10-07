@@ -343,18 +343,18 @@
   .pp-sk{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
   .pp-skc{ font:600 12px/1 var(--disp); padding:7px 10px; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--pc) 55%, #fff); color:#222; }
   /* white header + footer with bouncing shapes on the product page */
-  .tb-bounce{ display:none; position:absolute; top:6px; bottom:6px; left:40%; right:40%; overflow:hidden; pointer-events:none; z-index:0; }
+  .tb-bounce{ display:none; position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
   #tb > *:not(.tb-bounce){ position:relative; z-index:1; }
   body.in-product #tb{ background:rgba(255,255,255,.95); border-bottom:1px solid #ececec; }
   body.in-product .tb-bounce{ display:block; }
-  .pp-bn{ position:absolute; left:0; top:0; width:var(--sz); height:var(--sz); opacity:.85; animation:ppBx var(--dx) cubic-bezier(.45,.05,.55,.95) var(--dl) infinite alternate, ppBy var(--dy) cubic-bezier(.45,.05,.55,.95) var(--dl) infinite alternate; }
+  .pp-bn{ position:absolute; left:0; top:0; width:var(--sz); height:var(--sz); opacity:.85; will-change:transform; }
   .pp-bn svg{ width:100%; height:100%; display:block; animation:ppSpin 40s linear infinite; }
   @keyframes ppBx{ to{ left:calc(100% - var(--sz)); } }
   @keyframes ppBy{ to{ top:calc(100% - var(--sz)); } }
   .tb-bounce .pp-bn{ opacity:.35; }
   .tb-bounce .pp-bn svg{ animation-duration:80s; }
   #mfAtmos .pp-bn{ opacity:.45; }
-  #mfAtmos.pp-fbounce{ background:#fff; bottom:auto; height:clamp(22px,4vh,56px); }
+  #mfAtmos.pp-fbounce{ background:transparent; inset:0; height:auto; }
   @media (prefers-reduced-motion:reduce){ .pp-bn, .pp-bn svg, .pp-mqi{ animation:none; } }
 
   /* playful v2 */
@@ -1370,11 +1370,30 @@ const SITE = {
   let rt = 0;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(function () { measureHud(); refitTitles(); }, 160); });
   const BOUNCE = (n, big) => { let h = ""; const cols = ["#ff6b4a", "#4f7cff", "#1fae6a", "#9b5cff", "#f9c22e"]; for (let i = 0; i < n; i++) { const sz = big ? 26 + (i * 17) % 44 : 12 + (i * 5) % 10; h += '<span class="pp-bn" style="--sz:' + sz + 'px;--dx:' + ((big ? 26 : 96) + (i * 5.3) % 18).toFixed(1) + 's;--dy:' + ((big ? 15 : 60) + (i * 3.1) % 12).toFixed(1) + 's;--dl:-' + (i * 4.7).toFixed(1) + 's;color:' + cols[i % cols.length] + '">' + PSH[i % PSH.length] + '</span>'; } return h; };
-  (function () { const tb = $("tb"); if (!tb) return; const d = el("div", "tb-bounce"); d.setAttribute("aria-hidden", "true"); d.innerHTML = BOUNCE(4, false); tb.insertBefore(d, tb.firstChild); const fit = () => { const a = $("tbName").getBoundingClientRect(), b = $("tbNav").getBoundingClientRect(), t = tb.getBoundingClientRect(); const l = a.right - t.left + 16, r = t.right - b.left + 16; d.style.left = l + "px"; d.style.right = r + "px"; d.style.visibility = (t.width - l - r) > 40 ? "visible" : "hidden"; }; window.addEventListener("resize", fit); if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(fit); setTimeout(fit, 300); fit(); })();
+  (function () { const tb = $("tb"); if (!tb) return; const d = el("div", "tb-bounce"); d.setAttribute("aria-hidden", "true"); d.innerHTML = BOUNCE(7, false); tb.insertBefore(d, tb.firstChild); })();
+  // particle physics: shapes spread out, drift and bounce off walls and each other
+  (function () {
+    const ps = new Map(), still = matchMedia("(prefers-reduced-motion:reduce)").matches;
+    const init = (box) => { const W = box.clientWidth, H = box.clientHeight, list = [], n = box.children.length; [...box.querySelectorAll(".pp-bn")].forEach((e, i) => { const r = e.offsetWidth / 2, a = Math.random() * 6.28, v = 0.25 + Math.random() * 0.3; list.push({ e, r, x: ((i + 0.5) / n) * W, y: r + Math.random() * Math.max(0, H - 2 * r), vx: Math.cos(a) * v, vy: Math.sin(a) * v }); }); return list; };
+    let last = 0;
+    const step = (t) => {
+      const k = last ? Math.min((t - last) / 16.7, 3) : 1; last = t;
+      [$("tb") && $("tb").querySelector(".tb-bounce"), $("mfAtmos")].forEach(box => {
+        if (!box || !box.offsetWidth || !box.querySelector(".pp-bn")) return;
+        let L = ps.get(box); if (!L || !L.length || !L[0].e.isConnected) { L = init(box); ps.set(box, L); }
+        const W = box.clientWidth, H = box.clientHeight;
+        if (!still) for (const p of L) { p.x += p.vx * k; p.y += p.vy * k; if (p.x < p.r) { p.x = p.r; p.vx = Math.abs(p.vx); } if (p.x > W - p.r) { p.x = W - p.r; p.vx = -Math.abs(p.vx); } const top = Math.min(p.r, H / 2), bot = Math.max(H - p.r, H / 2); if (p.y < top) { p.y = top; p.vy = Math.abs(p.vy); } if (p.y > bot) { p.y = bot; p.vy = -Math.abs(p.vy); } }
+        for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, m = a.r + b.r; if (d < m) { const nx = dx / d, ny = dy / d, o = (m - d) / 2; a.x -= nx * o; a.y -= ny * o; b.x += nx * o; b.y += ny * o; const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny; if (rv < 0) { a.vx += rv * nx; a.vy += rv * ny; b.vx -= rv * nx; b.vy -= rv * ny; } } }
+        for (const p of L) p.e.style.transform = "translate(" + (p.x - p.r).toFixed(1) + "px," + (p.y - p.r).toFixed(1) + "px)";
+      });
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  })();
   function themeFooter(id) {
     const mf = $("mfoot"), at = $("mfAtmos"); if (!mf) return;
     if (id === "work") { mf.style.setProperty("--fbg", "#0e1014"); mf.style.setProperty("--fink", "#f2f2f0"); mf.style.setProperty("--facc", "#4f7cff"); mf.style.setProperty("--fbd", "#262a33"); if (at) { if (at.classList.contains("pp-fbounce")) at.innerHTML = '<div class="loc-atmos"></div>'; at.className = ""; at.style.cssText = ""; } return; }
-    if (id === "product") { mf.style.setProperty("--fbg", "#fff"); mf.style.setProperty("--fink", "#111"); mf.style.setProperty("--facc", "#ff6b4a"); mf.style.setProperty("--fbd", "#111"); if (at) { at.className = "pp-fbounce"; at.style.cssText = ""; at.innerHTML = BOUNCE(6, true); } return; }
+    if (id === "product") { mf.style.setProperty("--fbg", "#fff"); mf.style.setProperty("--fink", "#111"); mf.style.setProperty("--facc", "#ff6b4a"); mf.style.setProperty("--fbd", "#111"); if (at) { at.className = "pp-fbounce"; at.style.cssText = ""; at.innerHTML = BOUNCE(9, true); } return; }
     if (at && at.classList.contains("pp-fbounce")) at.innerHTML = '<div class="loc-atmos"></div>';
     const L = (id === "photo" && SITE.locations && SITE.locations.length) ? SITE.locations[SITE.locations.length - 1] : null;
     if (L) {
