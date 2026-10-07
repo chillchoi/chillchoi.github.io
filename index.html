@@ -741,6 +741,32 @@
   body.in-work .wcard.dim{ opacity:.25; }
   @media (max-width:600px){ body.in-work .wt-role{ display:none; } }
   @media (prefers-reduced-motion:reduce){ body.in-work .wt-bar.live, body.in-work .wt-bar.live::after{ animation:none; } }
+  body.in-work .sk-play{ position:relative; margin:0 0 clamp(24px,4vh,40px); padding:16px clamp(14px,1.8vw,22px); border-radius:16px; border:1px solid #262a33; background:radial-gradient(100% 120% at 100% 0%, rgba(255,79,163,.10), transparent 50%), radial-gradient(100% 120% at 0% 100%, rgba(34,195,214,.10), transparent 50%), #16181e; }
+  body.in-work .sk-hd{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin-bottom:12px; }
+  body.in-work .sk-hd strong{ font:700 clamp(18px,2vw,22px)/1.1 var(--disp); color:#fff; }
+  body.in-work .sk-info{ flex:1 1 240px; font:500 13px/1.35 var(--disp); color:#9aa0ab; }
+  body.in-work .sk-dice{ display:inline-flex; align-items:center; gap:8px; font:700 13px/1 var(--disp); color:#0e1014; padding:10px 16px; border-radius:999px; background:linear-gradient(90deg,#ff6b4a,#f9c22e,#7ad151,#22c3d6,#9b5cff,#ff4fa3); background-size:300% 100%; animation:skHue 6s linear infinite; transition:transform .2s; }
+  body.in-work .sk-dice:hover{ transform:translateY(-2px) scale(1.04); }
+  body.in-work .sk-dice.roll .sk-die{ animation:skRoll .6s cubic-bezier(.3,1.4,.5,1); }
+  body.in-work .sk-die{ display:inline-block; font-size:16px; }
+  @keyframes skHue{ to{ background-position:300% 0; } }
+  @keyframes skRoll{ from{ transform:rotate(-540deg) scale(.4); } }
+  body.in-work .sk-field{ position:relative; height:clamp(200px,28vh,280px); overflow:hidden; border-radius:12px; background:rgba(255,255,255,.02); border:1px dashed #2c313b; touch-action:none; }
+  body.in-work .sk-b{ position:absolute; left:0; top:0; font-family:var(--disp); font-weight:700; line-height:1; white-space:nowrap; color:#fff; padding:.55em .9em; border-radius:999px; background:color-mix(in srgb, var(--wc) 75%, #16181e); border:2px solid var(--wc); box-shadow:0 4px 14px color-mix(in srgb, var(--wc) 35%, transparent); cursor:grab; user-select:none; touch-action:none; transition:opacity .3s, box-shadow .3s, background .3s; will-change:transform; }
+  body.in-work .sk-b:active{ cursor:grabbing; }
+  body.in-work .sk-field.picking .sk-b:not(.on){ opacity:.3; }
+  body.in-work .sk-b.on{ background:var(--wc); color:#0e1014; box-shadow:0 0 22px var(--wc); }
+  body.in-work .sk-b:focus-visible, body.in-work .sk-dice:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+  body.in-work .wcard{ position:relative; transform-style:preserve-3d; will-change:transform; }
+  body.in-work .wc-glare{ position:absolute; inset:0; pointer-events:none; border-radius:inherit; background:radial-gradient(circle at var(--gx,50%) var(--gy,50%), color-mix(in srgb, var(--wc) 30%, transparent), transparent 55%); opacity:0; transition:opacity .3s; mix-blend-mode:screen; }
+  body.in-work .wcard:hover .wc-glare{ opacity:1; }
+  body.in-work .wcard:hover{ border-color:var(--wc); }
+  body.in-work .wcard.wc-pick{ animation:wcPick 1.2s ease-out; }
+  @keyframes wcPick{ 0%,60%{ box-shadow:0 0 0 3px var(--wc), 0 0 40px var(--wc); border-color:var(--wc); } 100%{ box-shadow:none; } }
+  .cf-bit{ position:fixed; z-index:200; width:16px; height:16px; margin:-8px; pointer-events:none; animation:cfFly 1s cubic-bezier(.2,.7,.4,1) forwards; }
+  .cf-bit svg{ width:100%; height:100%; display:block; }
+  @keyframes cfFly{ to{ transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(.4); opacity:0; } }
+  @media (prefers-reduced-motion:reduce){ body.in-work .sk-dice{ animation:none; } }
   /* work panel: carries the card's colour and shape, short staggered build */
   body.in-work #wdrawer:not(.pcase) .wd-panel{ border-left-color:var(--wc,#262a33); }
   body.in-work #wdrawer:not(.pcase) .vlbl, body.in-work #wdrawer:not(.pcase) .wd-csk{ color:var(--wc,#7f9bff); }
@@ -857,7 +883,7 @@ const SITE = {
   work: [
     {"title": "Klleon", "year": "2026", "img": "photos/work/klleon.jpg", "role": "Summer Product Management & BD Intern · Series-A AI startup", "date": "Jun 2026 to Present", "category": "Product · AI", "tags": ["Product", "Kiosk", "GTM", "Data", "Experiment design"], "stat": ["5 days", "live with zero downtime"], "desc": "Product and BD at a startup building AI digital humans. I built a live kiosk and a retail prototype on my own, and found two ways to earn from the avatar in its usage data.", "cs": ["A digital-human startup needed to show it could ship and run live interactive installs, and a clearer read on where the money was.", "I built a kiosk on my own for a financial company's booth at a large international event and ran it for all 5 days. Glow Buddy, a 15-scene retail prototype for a phone maker, took me 3 weeks. From the conversation logs of Klleon's avatar at the Samsung booth at VivaTech 2026, I designed a goal-mode A/B test. I also shaped the product concept and the pitch for a real-time AI companion for family caregivers that Klleon is developing with a university medical research lab.", "The kiosk had zero downtime. The expo data pointed to two ways to earn from the avatar, intent data for brands and a goal mode that steers visitors to a product, and the test is built to raise the share of visitors who reach a directed outcome."], "extra": [["photos/product/caregiver.jpg", "Concept screen for the caregiver companion, choosing an AI supporter"]]},
     {"title": "Biotech R&D Software Company", "year": "2026", "img": "photos/work/lab-team.jpg", "role": "Contract Product Design Analyst", "date": "Sep 2026 to Present", "category": "Product · Design · Biotech", "tags": ["User Research", "Personas", "Navigation", "Figma"], "stat": ["6", "user types in the study"], "desc": "User research on a lab data platform that scientists use every day, to see how each type of user reacts to new navigation.", "cs": ["The company is introducing new navigation to its lab platform, and it needs the scientists and admins who use it every day to choose to switch.", "Our team is running 1:1 think-aloud sessions with users from 6 user types, and the findings will become ranked design changes for each user type, delivered as a presentation and a session dataset.", "The team will hand over case studies for each user type and an organized spreadsheet of every session, so the product team can keep using the data after the study ends."]},
-    {"title": "Phoenix Consulting Group", "year": "2026", "img": "photos/work/phoenix.jpg", "role": "President · UC Berkeley", "date": "Feb 2022 to Jun 2023, Apr 2025 to Present", "category": "Leadership · Consulting", "tags": ["Leadership", "PM", "Healthcare", "Training"], "stat": ["57", "members, 4 client projects a semester"], "desc": "I lead this student consulting group at Berkeley, and I rewrote how its client teams run their projects.", "cs": ["Every client team ran projects its own way, so quality depended on who you got.", "I wrote the officer charter and a PM curriculum, and trained new analysts through our 13-week training program for 3 years.", "Today 57 members deliver 4 client engagements every semester, and every team follows the same playbook."]},
+    {"title": "Phoenix Consulting Group", "year": "2026", "img": "photos/work/phoenix.jpg", "role": "President · UC Berkeley", "date": "Feb 2022 to Jun 2023, Apr 2025 to Apr 2026", "category": "Leadership · Consulting", "tags": ["Leadership", "PM", "Healthcare", "Training"], "stat": ["57", "members, 4 client projects a semester"], "desc": "I lead this student consulting group at Berkeley, and I rewrote how its client teams run their projects.", "cs": ["Every client team ran projects its own way, so quality depended on who you got.", "I wrote the officer charter and a PM curriculum, and trained new analysts through our 13-week training program for 3 years.", "Today 57 members deliver 4 client engagements every semester, and every team follows the same playbook."]},
     {"title": "Nonprofit Organization", "year": "2026", "img": "photos/work/nonprofit.jpg", "role": "Contract Consultant", "date": "Jan 2026 to May 2026", "category": "Data · Nonprofit", "tags": ["Segmentation", "K-means", "Python", "Research"], "desc": "Donor segmentation for a national nonprofit, narrowing a very large constituent base down to the donors who fund the mission.", "cs": ["The analyst team needed to know which constituents drive most of the revenue.", "I advised the analyst team's K-means segmentation across the full constituent base.", "The model showed that a very small share of donors drove about half of the revenue, so the team can reach that group first."]},
     {"title": "Medical Device Software Company", "year": "2025", "img": "photos/work/medtech.jpg", "role": "Contract Consultant", "date": "Sep 2025 to Dec 2025", "category": "Data · Life Sciences", "tags": ["Python", "Oncology", "Modeling"], "desc": "A Python model of oncology trials to estimate phase success rates.", "cs": ["Leadership needed trial success rates it could plan on.", "I directed a Python model of thousands of oncology trials that calculated the mean Phase 1 to 3 success rate across four indications.", "The model's rate landed within a rounding error of the industry benchmark, so the team could trust it."]},
     {"title": "Korean Law Firm", "year": "2025", "img": "photos/work/lawfirm.jpg", "role": "Undergraduate Clerkship Intern", "date": "Jul 2025 to Aug 2025", "category": "Legal · Cross-border", "tags": ["Diligence", "Compliance", "Legal Research"], "desc": "A clerkship at a major Korean law firm, reviewing cross-border deals for gaps.", "cs": ["Cross-border M&A and licensing deals can carry risks that are easy to miss in long contracts.", "I reviewed hundreds of cross-border contracts for diligence gaps.", "I briefed dozens of attorneys on the gaps I found."]},
@@ -1246,6 +1272,58 @@ const SITE = {
     const hg = el("div", "pp-howg"); HW.forEach((hw, i) => { const c = el("div", "pp-hc"); c.style.setProperty("--pc", PC[i % PC.length]); const top = el("div", "pp-hct"); top.appendChild(shp(i, "pp-shp pp-hcs")); top.appendChild(el("span", "pp-n", pad2(i + 1))); c.appendChild(top); c.appendChild(el("h4", "", hw[0])); c.appendChild(el("p", "", hw[1])); hg.appendChild(c); }); how.appendChild(hg); box.appendChild(how);
     box.appendChild(contactStrip());
   }
+  function confetti(x, y, n) {
+    if (REDUCE_MOTION) return;
+    for (let k = 0; k < n; k++) { const c = el("span", "cf-bit"); c.setAttribute("aria-hidden", "true"); c.innerHTML = PSH[k % PSH.length]; const a = Math.random() * 6.28, v = 120 + Math.random() * 220; c.style.cssText = "left:" + x + "px;top:" + y + "px;color:" + WC[k % WC.length] + ";--tx:" + (Math.cos(a) * v).toFixed(0) + "px;--ty:" + (Math.sin(a) * v - 80).toFixed(0) + "px;--r:" + (Math.random() * 720 - 360).toFixed(0) + "deg"; doc.body.appendChild(c); setTimeout(() => c.remove(), 1100); }
+  }
+  function tiltCards(cards) {
+    if (REDUCE_MOTION || !matchMedia("(hover:hover)").matches) return;
+    cards.forEach(c => { if (!c) return; const g = el("span", "wc-glare"); g.setAttribute("aria-hidden", "true"); c.appendChild(g);
+      c.addEventListener("pointermove", e => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; c.style.transform = "perspective(900px) rotateX(" + ((.5 - y) * 7).toFixed(2) + "deg) rotateY(" + ((x - .5) * 9).toFixed(2) + "deg) translateY(-4px)"; c.style.setProperty("--gx", (x * 100).toFixed(1) + "%"); c.style.setProperty("--gy", (y * 100).toFixed(1) + "%"); });
+      c.addEventListener("pointerleave", () => { c.style.transform = ""; }); });
+  }
+  function skillPlay(list, cards, grid) {
+    const wrap = el("section", "sk-play");
+    const hd = el("div", "sk-hd"); hd.appendChild(el("strong", "", "Skill playground")); const info = el("span", "sk-info", "Fling the bubbles around. Tap one to see where I used it."); info.setAttribute("aria-live", "polite"); hd.appendChild(info);
+    const dice = el("button", "sk-dice"); dice.type = "button"; dice.innerHTML = '<span class="sk-die" aria-hidden="true">🎲</span> Surprise me'; hd.appendChild(dice); wrap.appendChild(hd);
+    const field = el("div", "sk-field"); wrap.appendChild(field);
+    const cnt = {}; list.forEach((w, i) => (w.tags || []).forEach(t => { (cnt[t] = cnt[t] || []).push(i); }));
+    const tags = Object.keys(cnt).sort((a, b) => cnt[b].length - cnt[a].length);
+    let pick = null; const B = [];
+    const apply = () => { B.forEach(b => b.e.classList.toggle("on", b.t === pick)); field.classList.toggle("picking", !!pick); cards.forEach((c, i) => { if (c) c.classList.toggle("dim", !!pick && cnt[pick].indexOf(i) < 0); }); info.textContent = pick ? pick + " · used in " + cnt[pick].length + " role" + (cnt[pick].length > 1 ? "s" : "") + ": " + cnt[pick].map(i => list[i].title).join(", ") : "Fling the bubbles around. Tap one to see where I used it."; };
+    tags.forEach((t, k) => { const n = cnt[t].length, b = el("button", "sk-b"); b.type = "button"; b.textContent = t; const col = WC[cnt[t][0] % WC.length]; b.style.setProperty("--wc", col); b.style.fontSize = (11 + n * 2.2) + "px"; field.appendChild(b); B.push({ e: b, t, x: 0, y: 0, vx: (Math.random() - .5) * 2, vy: (Math.random() - .5) * 2, w: 0, h: 0, drag: false, moved: 0 }); });
+    let W = 0, H = 0, ready = false;
+    const layout = () => { W = field.clientWidth; H = field.clientHeight; B.forEach((b, k) => { b.w = b.e.offsetWidth; b.h = b.e.offsetHeight; if (!ready) { b.x = Math.random() * Math.max(1, W - b.w); b.y = Math.random() * Math.max(1, H - b.h); } }); ready = W > 0; };
+    B.forEach(b => {
+      let ox = 0, oy = 0, lx = 0, ly = 0, lt = 0;
+      b.e.addEventListener("pointerdown", e => { b.drag = true; b.moved = 0; b.e.setPointerCapture(e.pointerId); const r = field.getBoundingClientRect(); ox = e.clientX - r.left - b.x; oy = e.clientY - r.top - b.y; lx = e.clientX; ly = e.clientY; lt = performance.now(); });
+      b.e.addEventListener("pointermove", e => { if (!b.drag) return; const r = field.getBoundingClientRect(), now = performance.now(), dt = Math.max(8, now - lt); b.vx = (e.clientX - lx) / dt * 16; b.vy = (e.clientY - ly) / dt * 16; b.moved += Math.abs(e.clientX - lx) + Math.abs(e.clientY - ly); lx = e.clientX; ly = e.clientY; lt = now; b.x = e.clientX - r.left - ox; b.y = e.clientY - r.top - oy; });
+      b.e.addEventListener("pointerup", () => { b.drag = false; if (b.moved < 6) { pick = pick === b.t ? null : b.t; apply(); const r = b.e.getBoundingClientRect(); if (pick) confetti(r.left + r.width / 2, r.top + r.height / 2, 10); } });
+      b.e.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick = pick === b.t ? null : b.t; apply(); } });
+      b.e.addEventListener("click", e => e.preventDefault());
+    });
+    let last = 0;
+    const tick = t => {
+      if (!wrap.isConnected) return;
+      const k = last ? Math.min((t - last) / 16.7, 3) : 1; last = t;
+      if (!ready || field.clientWidth !== W) layout();
+      if (ready) {
+        for (const b of B) { if (b.drag) continue; b.vy += .02 * k; b.vx *= Math.pow(.995, k); b.vy *= Math.pow(.995, k); if (REDUCE_MOTION) { b.vx = b.vy = 0; } b.x += b.vx * k; b.y += b.vy * k; if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) * .85; } if (b.x > W - b.w) { b.x = W - b.w; b.vx = -Math.abs(b.vx) * .85; } if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy) * .85; } if (b.y > H - b.h) { b.y = H - b.h; b.vy = -Math.abs(b.vy) * .7; if (Math.abs(b.vy) < .3) b.vy = -(.6 + Math.random() * 1.2); } }
+        for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) { const a = B[i], c = B[j], dx = (c.x + c.w / 2) - (a.x + a.w / 2), dy = (c.y + c.h / 2) - (a.y + a.h / 2), ox2 = (a.w + c.w) / 2 - Math.abs(dx), oy2 = (a.h + c.h) / 2 - Math.abs(dy); if (ox2 > 0 && oy2 > 0) { if (ox2 < oy2) { const s2 = Math.sign(dx) || 1, m = ox2 / 2; if (!a.drag) a.x -= s2 * m; if (!c.drag) c.x += s2 * m; const v = a.vx; a.vx = c.vx * .9; c.vx = v * .9; } else { const s2 = Math.sign(dy) || 1, m = oy2 / 2; if (!a.drag) a.y -= s2 * m; if (!c.drag) c.y += s2 * m; const v = a.vy; a.vy = c.vy * .9; c.vy = v * .9; } } }
+        for (const b of B) b.e.style.transform = "translate(" + b.x.toFixed(1) + "px," + b.y.toFixed(1) + "px)";
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    dice.addEventListener("click", () => {
+      dice.classList.remove("roll"); void dice.offsetWidth; dice.classList.add("roll");
+      B.forEach(b => { b.vx += (Math.random() - .5) * 14; b.vy -= 4 + Math.random() * 6; });
+      const i = Math.floor(Math.random() * list.length), c = cards[i];
+      const r = dice.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2, 18);
+      if (!c) return; setTimeout(() => { c.scrollIntoView({ behavior: REDUCE_MOTION ? "auto" : "smooth", block: "center" }); c.classList.remove("wc-pick"); void c.offsetWidth; c.classList.add("wc-pick"); setTimeout(() => openWork(list[i], false), REDUCE_MOTION ? 0 : 1100); }, 500);
+    });
+    return wrap;
+  }
   function buildWork(box, prod) {
     const id = prod ? "product" : "work", word = prod ? "Products" : "Experiences";
     box.appendChild(head(id, false));
@@ -1269,8 +1347,9 @@ const SITE = {
       c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openWork(w, prod); } });
       grid.appendChild(c); cards[wi] = c;
     });
-    if (!prod) { const wt = workRibbon(SITE.work, cards); if (wt) box.appendChild(wt); }
+    if (!prod) { const wt = workRibbon(SITE.work, cards); if (wt) box.appendChild(wt); box.appendChild(skillPlay(SITE.work, cards, grid)); }
     box.appendChild(grid);
+    if (!prod) tiltCards(cards);
     if (anim) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" }); grid.querySelectorAll(".wcard").forEach(c => { io.observe(c); c.addEventListener("focus", () => c.classList.add("in"), { once: true }); }); }
     box.appendChild(contactStrip());
   }
